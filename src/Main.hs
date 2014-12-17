@@ -1,3 +1,5 @@
 module Main where
 
-main = putStrLn "Hello World"
+import Grid (Grid, initGrid)
+
+main = print $ initGrid 20 20
