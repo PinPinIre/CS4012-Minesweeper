@@ -1,7 +1,6 @@
 module Grid (Grid, initGrid) where
 
-import Square    (Square, initSquare)
-import Data.List (intercalate)
+import Square (Square, initSquare)
 
 data Grid = Grid { width :: Int
                  , height :: Int
@@ -9,10 +8,7 @@ data Grid = Grid { width :: Int
                  }
 
 instance Show Grid where
-    show g = intercalate "\n" rows
-        where
-            showRow = foldr (\s acc -> show s ++ acc) ""
-            rows = map showRow $ grid g
+    show = unlines . map (concatMap show) . grid
 
 initGrid :: Int -> Int -> Grid
 initGrid w h = Grid { width = w
@@ -22,4 +18,3 @@ initGrid w h = Grid { width = w
     where
         rows  = replicate h initSquare
         board = replicate w rows
-
