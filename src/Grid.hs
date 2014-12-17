@@ -11,7 +11,7 @@ data Grid = Grid { width :: Int
 instance Show Grid where
     show g = intercalate "\n" showRows
         where
-            showRow = foldr (\s1 s2 -> show s1 ++ s2) ""
+            showRow = foldr (\s acc -> show s ++ acc) ""
             showRows = map showRow $ grid g
 
 initGrid :: Int -> Int -> Grid
