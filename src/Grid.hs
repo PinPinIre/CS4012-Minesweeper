@@ -9,10 +9,10 @@ data Grid = Grid { width :: Int
                  }
 
 instance Show Grid where
-    show g = intercalate "\n" showRows
+    show g = intercalate "\n" rows
         where
             showRow = foldr (\s acc -> show s ++ acc) ""
-            showRows = map showRow $ grid g
+            rows = map showRow $ grid g
 
 initGrid :: Int -> Int -> Grid
 initGrid w h = Grid { width = w
