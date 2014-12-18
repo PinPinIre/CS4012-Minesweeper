@@ -1,6 +1,6 @@
 module Main where
 
-import Grid (initGrid)
+import Board (initBoard)
 
 main :: IO ()
-main = print $ initGrid 20 20
+main = print $ initBoard 20 20
