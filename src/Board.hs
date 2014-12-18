@@ -2,7 +2,7 @@ module Board (Board, boardCells, initBoard) where
 
 import           Cell                  (Cell, initCell)
 import           Data.Vector           (Vector)
-import qualified Data.Vector as Vector (empty, replicate, toList)
+import qualified Data.Vector as Vector (replicate, toList)
 
 data Board = Board { boardCells :: Vector (Vector Cell) }
 
