@@ -39,7 +39,7 @@ gameStatus (Board cells)
         concatCells = Vector.toList $ Vector.concat $ Vector.toList cells
         cellStates = map checkCellState concatCells
 
-checkCellState :: Cell
-checkCellState c
-    | (c ^. flagged && c ^. mined) || (c ^. revealed && not (c ^. mined)) = Won
-    | c ^. revealed && c ^. mined = Lose
+        checkCellState c
+            | c ^. flagged && c ^. mined = Won
+            | c ^. revealed && c ^. mined = Lose
+            | otherwise = Move
