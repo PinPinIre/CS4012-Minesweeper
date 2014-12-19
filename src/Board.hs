@@ -32,14 +32,14 @@ boardCells (Board cells) = cells
 
 gameStatus :: Board -> Status
 gameStatus (Board cells)
-    | all (==Won) cellStatuses = Won
-    | Lose `elem` cellStatuses = Lose
+    | all (==Won) cellStates = Won
+    | Lose `elem` cellStates = Lose
     | otherwise = Move
     where
         concatCells = Vector.toList $ Vector.concat $ Vector.toList cells
-        cellStatuses = map checkState concatCells
+        cellStates = map checkCellState concatCells
 
-checkState :: Cell
-checkState c
+checkCellState :: Cell
+checkCellState c
     | (c ^. flagged && c ^. mined) || (c ^. revealed && not (c ^. mined)) = Won
     | c ^. revealed && c ^. mined = Lose
