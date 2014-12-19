@@ -11,6 +11,8 @@ data Cell = Cell
     , _adjacentMines :: Int
     }
 
+makeLenses ''Cell
+
 instance Show Cell where
     show s
         | _flagged s  = "[ F ]"
@@ -24,5 +26,3 @@ initCell = Cell { _mined = False
                 , _flagged = False
                 , _adjacentMines = 0
                 }
-
-makeLenses ''Cell

@@ -1,22 +1,10 @@
-module Board (Board, initBoard, boardCells, gameStatus) where
+module Board (Board, initBoard, boardCells) where
 
-import           Control.Lens          ( (^.) )
-import           Cell                  ( Cell
-                                       , initCell
-                                       , mined
-                                       , flagged
-                                       , revealed
-                                       , adjacentMines
-                                       )
-import           Data.Vector           ( Vector )
-import qualified Data.Vector as Vector ( concat
-                                       , replicate
-                                       , toList
-                                       )
+import Cell
+import Data.Vector (Vector)
+import qualified Data.Vector as Vector (replicate, toList)
 
 data Board = Board (Vector (Vector Cell))
-
-data Status = Won | Lose | Move deriving (Show, Eq)
 
 instance Show Board where
     show = unlines . map (concatMap show . Vector.toList) . Vector.toList . boardCells
@@ -29,18 +17,3 @@ initBoard w h = Board board
 
 boardCells :: Board -> Vector (Vector Cell)
 boardCells (Board cells) = cells
-
-gameStatus :: Board -> Status
-gameStatus (Board cells)
-    | all (==Won) cellStates = Won
-    | Lose `elem` cellStates = Lose
-    | otherwise = Move
-    where
-        concatCells = Vector.toList $ Vector.concat $ Vector.toList cells
-        checkCellState c
-            | c ^. flagged && c ^. mined = Won
-            | c ^. revealed && c ^. mined = Lose
-            | otherwise = Move
-
-        cellStates = map checkCellState concatCells
-
