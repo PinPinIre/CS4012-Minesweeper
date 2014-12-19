@@ -1,10 +1,10 @@
 module Main where
 
-import Board (initBoard, gameWon)
+import Board (initBoard, gameStatus)
 
 main :: IO ()
 main = do
     let board = initBoard 20 20
-    let won = gameWon board
+    let won = gameStatus board
     print board
     print won

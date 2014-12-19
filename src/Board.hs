@@ -1,4 +1,4 @@
-module Board (Board, initBoard, boardCells, gameWon) where
+module Board (Board, initBoard, boardCells, gameStatus) where
 
 import           Control.Lens          ( (^.) )
 import           Cell                  ( Cell
@@ -16,7 +16,7 @@ import qualified Data.Vector as Vector ( concat
 
 data Board = Board (Vector (Vector Cell))
 
-data Status = Won | Lose | Move
+data Status = Won | Lose | Move deriving (Show, Eq)
 
 instance Show Board where
     show = unlines . map (concatMap show . Vector.toList) . Vector.toList . boardCells
@@ -37,9 +37,10 @@ gameStatus (Board cells)
     | otherwise = Move
     where
         concatCells = Vector.toList $ Vector.concat $ Vector.toList cells
-        cellStates = map checkCellState concatCells
-
         checkCellState c
             | c ^. flagged && c ^. mined = Won
             | c ^. revealed && c ^. mined = Lose
             | otherwise = Move
+
+        cellStates = map checkCellState concatCells
+
