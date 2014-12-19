@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Cell (Cell, initCell) where
+module Cell (Cell, initCell, mined, flagged, revealed, adjacentMines) where
 
 import Control.Lens
 

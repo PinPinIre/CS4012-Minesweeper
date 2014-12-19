@@ -1,6 +1,10 @@
 module Main where
 
-import Board (initBoard)
+import Board (initBoard, gameWon)
 
 main :: IO ()
-main = print $ initBoard 20 20
+main = do
+    let board = initBoard 20 20
+    let won = gameWon board
+    print board
+    print won
