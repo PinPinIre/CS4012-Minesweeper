@@ -16,6 +16,8 @@ import qualified Data.Vector as Vector ( concat
 
 data Board = Board (Vector (Vector Cell))
 
+data Status = Won | Lose | Move
+
 instance Show Board where
     show = unlines . map (concatMap show . Vector.toList) . Vector.toList . boardCells
 
@@ -28,8 +30,16 @@ initBoard w h = Board board
 boardCells :: Board -> Vector (Vector Cell)
 boardCells (Board cells) = cells
 
-gameWon :: Board -> Bool
-gameWon (Board cells) = all (==True) (map checkState concatCells)
+gameStatus :: Board -> Status
+gameStatus (Board cells)
+    | all (==Won) cellStatuses = Won
+    | Lose `elem` cellStatuses = Lose
+    | otherwise = Move
     where
         concatCells = Vector.toList $ Vector.concat $ Vector.toList cells
-        checkState c = (c ^. flagged && c ^. mined) || (c ^. revealed && not (c ^. mined))
+        cellStatuses = map checkState concatCells
+
+checkState :: Cell
+checkState c
+    | (c ^. flagged && c ^. mined) || (c ^. revealed && not (c ^. mined)) = Won
+    | c ^. revealed && c ^. mined = Lose
