@@ -20,8 +20,6 @@ makeLenses ''Minesweeper
 instance Show Minesweeper where
     show = show . view board
 
-type Pos = (Int, Int)
-
 type Game = State Minesweeper
 
 data Status = Won | Lose | Move deriving (Show, Eq)
@@ -49,15 +47,15 @@ checkCellStatus c
     | c ^. flagged && c ^. mined = True
     | otherwise                  = False
 
-revealCell :: Pos -> Game Status
-revealCell p = do
-    r <- isRevealed p
+revealCell :: Int -> Int -> Game Status
+revealCell x y = do
+    r <- isRevealed x y
     if not r then do
-        m <- isMined p
+        m <- isMined x y
         if m then
             return Lose
         else do
-            setRevealed p
+            setRevealed x y
             won <- isWon
 
             if won then
@@ -67,13 +65,13 @@ revealCell p = do
     else
         return Move
 
-flagCell :: Pos -> Game Status
-flagCell p = do
+flagCell :: Int -> Int -> Game Status
+flagCell x y = do
     m <- get
     if m ^. remainingFlags > 0 then do
-        f <- isFlagged p
+        f <- isFlagged x y
         if not f then do
-            setFlagged p
+            setFlagged x y
             won <- isWon
 
             if won then
@@ -85,29 +83,29 @@ flagCell p = do
     else
         return Move
 
-isMined :: Pos -> Game Bool
+isMined :: Int -> Int -> Game Bool
 isMined = getCellField mined
 
-isFlagged :: Pos -> Game Bool
+isFlagged :: Int -> Int -> Game Bool
 isFlagged = getCellField flagged
 
-setFlagged :: Pos -> Game ()
+setFlagged :: Int -> Int -> Game ()
 setFlagged = setCellField flagged True
 
-isRevealed :: Pos -> Game Bool
+isRevealed :: Int -> Int -> Game Bool
 isRevealed = getCellField revealed
 
-setRevealed :: Pos -> Game ()
+setRevealed :: Int -> Int -> Game ()
 setRevealed = setCellField revealed True
 
-getAdjacentMines :: Pos -> Game Int
+getAdjacentMines :: Int -> Int -> Game Int
 getAdjacentMines = getCellField adjacentMines
 
-getCellField :: Getter Cell a -> Pos -> Game a
-getCellField getter (x, y) = do
+getCellField :: Getter Cell a -> Int -> Int -> Game a
+getCellField getter x y = do
     m <- get
     return $ fromJust $ m ^? board . cells . element y . element x . getter
 
-setCellField :: Setter Cell Cell a b -> b -> Pos -> Game ()
-setCellField setter val (x, y) = combinedSetter .= val
+setCellField :: Setter Cell Cell a b -> b -> Int -> Int -> Game ()
+setCellField setter val x y = combinedSetter .= val
     where combinedSetter = board . cells . element x . element y . setter
