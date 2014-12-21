@@ -26,10 +26,8 @@ instance Show Cell where
 initCell :: Int -> Int -> Cell
 initCell x y = Cell { _xpos = x
                     , _ypos = y
-                    , _mined = isMined
+                    , _mined = False
                     , _revealed = False
                     , _flagged = False
                     , _adjacentMines = 0
                     }
-    where
-        isMined = x `mod` 5 == 0 && y `mod` 6 == 0

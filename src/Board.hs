@@ -5,7 +5,8 @@ module Board where
 import Cell
 import Control.Lens
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector (concatMap, filter, fromList, head, map, null, tail, toList)
+import qualified Data.Vector as Vector
+import System.Random
 
 data Board = Board { _cells :: Vector (Vector Cell) }
 
@@ -14,17 +15,26 @@ makeLenses ''Board
 instance Show Board where
     show = unlines . map (concatMap show . Vector.toList) . Vector.toList . _cells
 
-initBoard :: Int -> Int -> Board
-initBoard w h = Board adjacencyBoard
+initBoard :: Int -> Int -> Int -> StdGen -> Board
+initBoard w h mines rng = Board adjacencyBoard
     where
-        board = Vector.fromList [Vector.fromList [initCell y x | x <- [0..(w - 1)]] | y <-[0..(h - 1)]]
-        adjacencyBoard = calculateAdjacency board
+        board = Vector.fromList [Vector.fromList [initCell y x | x <- [0..(w - 1)]] | y <- [0..(h - 1)]]
+        minedBoard = addMines 10 w h rng board
+        adjacencyBoard = calculateAdjacency minedBoard
+
+addMines :: Int -> Int -> Int -> StdGen -> Vector (Vector Cell) -> Vector (Vector Cell)
+addMines 0 _ _ _ b = b
+addMines count w h rng b = addMines (count-1) w h newRng' newBoard
+    where
+        (x, newRng) = randomR (0, w-1) rng
+        (y, newRng') = randomR (0, h-1) newRng
+        newBoard = b & (element y . element x . mined) .~ True
 
 calculateAdjacency :: Vector (Vector Cell) -> Vector (Vector Cell)
 calculateAdjacency board = adjacent
     where
-        filterMines = Vector.filter _mined
-        mines = Vector.concatMap filterMines board
+        onlyMinesFilter = Vector.filter _mined
+        mines = Vector.concatMap onlyMinesFilter board
         adjacent = Vector.map (Vector.map (countAdjacentMines mines)) board
 
 countAdjacentMines :: Vector Cell -> Cell -> Cell

@@ -2,10 +2,12 @@ module Main where
 
 import Game
 import Control.Monad.State
+import System.Random
 
 main :: IO ()
 main = do
-    let minesweeper = initMinesweeper
+    rng <- newStdGen
+    let minesweeper = initMinesweeper nextrng
     let finished = execState testRun minesweeper
     print finished
 

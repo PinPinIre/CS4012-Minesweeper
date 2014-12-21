@@ -8,6 +8,7 @@ import Control.Lens
 import Control.Monad.State
 import Data.Maybe
 import qualified Data.Vector as Vector (concat, toList)
+import System.Random
 
 data Minesweeper = Minesweeper
     { _board :: Board
@@ -25,10 +26,10 @@ type Game = State Minesweeper
 
 data Status = Won | Lose | Move deriving (Show, Eq)
 
-initMinesweeper :: Minesweeper
-initMinesweeper = Minesweeper { _board = initBoard 20 20
-                              , _remainingFlags = 10
-                              }
+initMinesweeper :: StdGen -> Minesweeper
+initMinesweeper rng = Minesweeper { _board = initBoard 20 20 10 rng
+                                  , _remainingFlags = 10
+                                  }
 
 isWon :: Game Bool
 isWon = do
