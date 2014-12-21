@@ -11,6 +11,6 @@ main = do
 
 testRun :: State Minesweeper Status
 testRun = do
-    revealCell (1, 2)
-    revealCell (2, 7)
+    _ <- revealCell (1, 2)
+    _ <- revealCell (2, 7)
     flagCell (5, 8)
