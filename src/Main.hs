@@ -7,6 +7,7 @@ import Control.Monad (liftM2)
 import Graphics.UI.WX
 import Graphics.UI.WXCore
 import Data.List (groupBy)
+import System.Random
 import qualified Data.Function as DF (on)
 
 button_width = 30
@@ -14,20 +15,22 @@ button_height = 30
 
 main :: IO ()
 main = do
-    let minesweeper = initMinesweeper
+    rng <- newStdGen
+    let minesweeper = initMinesweeper rng
     let finished = execState testRun minesweeper
     print finished
     start gui
 
 testRun :: State Minesweeper Status
 testRun = do
-    revealCell (1, 2)
-    revealCell (2, 7)
-    flagCell (5, 8)
+    _ <- revealCell 1 2
+    _ <- revealCell 2 7
+    flagCell 5 8
 
 gui :: IO ()
 gui = do
-    game    <- varCreate $ initMinesweeper
+    rng <- newStdGen
+    game    <- varCreate $ initMinesweeper rng
 
     let
         cells = groupRows $ liftM2 (,) [0..19] [0..19]
@@ -49,22 +52,21 @@ genRow :: Panel() -> Var Minesweeper -> [(Int, Int)] -> IO [(Button ())]
 genRow f game cells =  mapM (genButtton f game) cells
 
 genButtton :: Panel() -> Var Minesweeper -> (Int, Int) -> IO (Button ())
-genButtton f game c = do
+genButtton f game (x, y) = do
     state <- varGet game
     let
-        (status, newstate) = runState (getCellField mined c) state
-        (x, y) = c
+        (status, newstate) = runState (getCellField mined x y) state
         xpos = x * button_height
         ypos = y * button_width
     varSet game newstate
     b <- button f [ text  := ""
                   , position := pt ypos xpos
                   , size := sz button_width button_height]
-    Graphics.UI.WX.set b [ on click  := reveal f c game b
-                         , on clickRight := flag f c game b]
+    Graphics.UI.WX.set b [ on click  := reveal f x y game b
+                         , on clickRight := flag f x y game b]
     return b
 
-reveal f c game b _ = do
+reveal f x y game b _ = do
     state <- varGet game
     let
         (status, newstate) = runState (setRevealed c) state
@@ -72,7 +74,7 @@ reveal f c game b _ = do
     print newstate
     varSet game newstate
 
-flag f c game b _ = do
+flag f x y game b _ = do
     state <- varGet game
     let
         (status, newstate) = runState (setFlagged c) state
