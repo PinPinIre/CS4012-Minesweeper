@@ -6,7 +6,7 @@ import Control.Monad.State
 main :: IO ()
 main = do
     let minesweeper = initMinesweeper
-    let (_, finished) = runState testRun minesweeper
+    let finished = execState testRun minesweeper
     print finished
 
 testRun :: State Minesweeper Status
