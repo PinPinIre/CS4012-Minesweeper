@@ -5,7 +5,7 @@ module Board where
 import Cell
 import Control.Lens
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector (fromList, toList)
+import qualified Data.Vector as Vector (concatMap, filter, fromList, head, map, null, tail, toList)
 
 data Board = Board { _cells :: Vector (Vector Cell) }
 
@@ -21,18 +21,20 @@ initBoard w h = Board adjacencyBoard
         adjacencyBoard = calculateAdjacency board
 
 calculateAdjacency :: Vector (Vector Cell) -> Vector (Vector Cell)
-calculateAdjacency board = Vector.fromList $ map Vector.fromList adjacent
+calculateAdjacency board = adjacent
     where
-        filterMines = filter (^. mined)
-        listBoard = map Vector.toList $ Vector.toList board
-        mines = concatMap filterMines listBoard
-        adjacent = map (map (countAdjacentMines mines)) listBoard
+        filterMines = Vector.filter _mined
+        mines = Vector.concatMap filterMines board
+        adjacent = Vector.map (Vector.map (countAdjacentMines mines)) board
 
-countAdjacentMines :: [Cell] -> Cell -> Cell
-countAdjacentMines [] c = c
-countAdjacentMines (m:mines) c
-    | isAdjacent c m = countAdjacentMines mines (c & adjacentMines +~ 1)
-    | otherwise      = countAdjacentMines mines c
+countAdjacentMines :: Vector Cell -> Cell -> Cell
+countAdjacentMines mines c
+    | Vector.null mines = c
+    | isAdjacent c m    = countAdjacentMines t (c & adjacentMines +~ 1)
+    | otherwise         = countAdjacentMines t c
+    where
+        m = Vector.head mines
+        t = Vector.tail mines
 
 isAdjacent :: Cell -> Cell -> Bool
 isAdjacent c1 c2 = dist' == 1
