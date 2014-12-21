@@ -7,7 +7,7 @@ import System.Random
 main :: IO ()
 main = do
     rng <- newStdGen
-    let minesweeper = initMinesweeper nextrng
+    let minesweeper = initMinesweeper rng
     let finished = execState testRun minesweeper
     print finished
 
