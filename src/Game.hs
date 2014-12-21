@@ -108,6 +108,5 @@ getCellField getter (x, y) = do
     return $ fromJust $ m ^? (board . cells . element y . element x . getter)
 
 setCellField :: Setter Cell Cell a b -> b -> Pos -> Game ()
-setCellField setter val (x, y)  = do
-    let new = board . cells . element x . element y . setter %~ const val
-    modify new
+setCellField setter val (x, y) = modify $ combinedSetter .~ val
+    where combinedSetter = board . cells . element x . element y . setter
