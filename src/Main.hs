@@ -90,7 +90,7 @@ flag x y game b _ = do
         (_, newstate) = runState (setFlagged x y) gameState
 
     unless flipped $ do
-        WX.set b [ text  := "⚑" ]
+        WX.set b [ text  := "🚩" ]
         print newstate
         varSet game newstate
 
