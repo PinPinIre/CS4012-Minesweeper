@@ -1,7 +1,7 @@
 module Main where
 
-import Minesweeper
-import Cell
+import Game
+import Control.Monad.State
 import Graphics.UI.WX
 import Graphics.UI.WXCore
 import System.Random
@@ -14,7 +14,16 @@ width    :: Int
 width    = 300
 
 main :: IO ()
-main = start gui
+main = do
+    let minesweeper = initMinesweeper
+    let finished = execState testRun minesweeper
+    print finished
+
+testRun :: State Minesweeper Status
+testRun = do
+    revealCell (1, 2)
+    revealCell (2, 7)
+    flagCell (5, 8)
 
 gui :: IO ()
 gui = do
