@@ -55,10 +55,9 @@ genButtton :: Panel() -> Var Minesweeper -> (Int, Int) -> IO (Button ())
 genButtton f game (x, y) = do
     state <- varGet game
     let
-        (status, newstate) = runState (getCellField mined x y) state
+        (status, _) = runState (getCellField mined x y) state
         xpos = x * button_height
         ypos = y * button_width
-    varSet game newstate
     b <- button f [ text  := ""
                   , position := pt ypos xpos
                   , size := sz button_width button_height]
@@ -69,18 +68,33 @@ genButtton f game (x, y) = do
 reveal f x y game b _ = do
     state <- varGet game
     let
-        (status, newstate) = runState (setRevealed c) state
-    Graphics.UI.WX.set b [ text  := "R" ]
-    print newstate
-    varSet game newstate
+        (flipped, _) = runState (getCellField revealed x y) state
+        (ismined, _) = runState (getCellField mined x y) state
+        (_, newstate) = runState (setRevealed x y) state
+    case (flipped, ismined) of
+        (False, False) -> do
+            let
+                (adj, _) = runState (getAdjacentMines x y) state
+            Graphics.UI.WX.set b [ text  := show adj ]
+            print newstate
+            varSet game newstate
+        (False, _) -> do
+            Graphics.UI.WX.set b [ text  := "💣" ]
+            print newstate
+            varSet game newstate
+        otherwise -> do return()
 
 flag f x y game b _ = do
     state <- varGet game
     let
-        (status, newstate) = runState (setFlagged c) state
-    Graphics.UI.WX.set b [ text  := "F" ]
-    print newstate
-    varSet game newstate
+        (flipped, _) = runState (getCellField revealed x y) state
+        (_, newstate) = runState (setFlagged x y) state
+    case flipped of
+        False -> do
+            Graphics.UI.WX.set b [ text  := "⚑" ]
+            print newstate
+            varSet game newstate
+        otherwise -> do return()
 
 
 layoutBoard :: [[(Button ())]] -> Layout
