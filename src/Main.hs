@@ -2,6 +2,7 @@ module Main where
 
 import Board
 import Cell
+import Solver
 import Control.Lens
 import Control.Monad.State
 import Game

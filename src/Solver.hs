@@ -1,0 +1,46 @@
+module Solver where
+
+import Board
+import Cell
+import Control.Lens
+import Control.Monad.State
+import Game
+import Data.Vector (Vector)
+import Data.List (delete, nub)
+import Data.Maybe
+import qualified Data.Vector as Vector
+
+type Solver = State Minesweeper
+
+findAllRevealed :: Minesweeper -> [Cell]
+findAllRevealed b = revealedCells
+    where
+        boardCells = b ^. board . cells
+        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter _revealed) boardCells
+
+filterZeroAdj ::  [Cell] -> [Cell]
+filterZeroAdj c = filter (\x -> (_adjacentMines x) == 0) c
+
+findSafeSquares :: Solver [(Int, Int)]
+findSafeSquares = do
+    m <- get
+    let zeroCells = filterZeroAdj $ findAllRevealed m
+    ss <- mapM getSafeSquares zeroCells
+    return $ nub $ concat ss
+
+getSafeSquares :: Cell -> Solver [(Int, Int)]
+getSafeSquares c = do
+    m <- get
+    let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
+    filterM (\(x,y) -> do
+                let result = m ^? board . cells . element y . element x . revealed
+                case result of
+                    Nothing -> do return False
+                    _ -> do return (not $ fromJust result)) nc
+
+
+getNeighbourCords :: Int -> Int -> [(Int, Int)]
+getNeighbourCords x y = delete (x,y) $ liftM2 (,) xranges yranges
+    where
+        xranges = [(x-1)..(x+1)]
+        yranges = [(y-1)..(y+1)]
