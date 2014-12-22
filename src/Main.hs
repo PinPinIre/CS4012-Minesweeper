@@ -85,12 +85,20 @@ flag x y game b _ = do
     gameState <- varGet game
     let
         (revealedState, _) = runState (getCellField revealed x y) gameState
-        (_, newstate) = runState (setFlagged x y) gameState
+        (flaggedState, _) = runState (getCellField flagged x y) gameState
 
-    unless revealedState $ do
-        WX.set b [ text  := "🚩" ]
-        print newstate
-        varSet game newstate
+    case (revealedState, flaggedState) of
+        (False, False) -> do
+            let (_, newstate) = runState (setFlagged x y) gameState
+            WX.set b [ text  := "🚩" ]
+            print newstate
+            varSet game newstate
+        (False, True) -> do
+            let (_, newstate) = runState (unsetFlagged x y) gameState
+            WX.set b [ text  := "" ]
+            print newstate
+            varSet game newstate
+        _ -> return ()
 
 layoutBoard :: [[Button ()]] -> Layout
 layoutBoard b = grid 0 0 $ map layoutRow b

@@ -92,6 +92,9 @@ isFlagged = getCellField flagged
 setFlagged :: Int -> Int -> Game ()
 setFlagged = setCellField flagged True
 
+unsetFlagged :: Int -> Int -> Game ()
+unsetFlagged = setCellField flagged False
+
 isRevealed :: Int -> Int -> Game Bool
 isRevealed = getCellField revealed
 
