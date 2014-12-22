@@ -28,25 +28,25 @@ gui = do
                , bgcolor := white]
 
     let numFlags = _remainingFlags minesweeper
-    let l = label ("Remaining Flags: " ++ show numFlags)
+    l <- staticText f [ text := ("Remaining Flags: " ++ show numFlags) ]
 
     p <- panel f []
 
-    _ <- genBoard p g
+    _ <- genBoard p l g
 
-    set f [layout := margin 5 $ column 5 [floatTop $ widget p, l]]
+    set f [ layout := margin 5 $ column 5 [floatTop $ widget p, floatLeft $ widget l] ]
 
-genBoard :: Panel () -> Var Minesweeper -> IO [[Button ()]]
-genBoard p g = do
+genBoard :: Panel () -> StaticText () -> Var Minesweeper -> IO [[Button ()]]
+genBoard p st g = do
     b <- varGet g
 
     let boardCells = _cells $ _board b
         cellsList = Vector.toList $ Vector.map Vector.toList boardCells
 
-    mapM (mapM (genButtton p g)) cellsList
+    mapM (mapM (genButtton p st g)) cellsList
 
-genButtton :: Panel () -> Var Minesweeper -> Cell -> IO (Button ())
-genButtton p g c = do
+genButtton :: Panel () -> StaticText () -> Var Minesweeper -> Cell -> IO (Button ())
+genButtton p st g c = do
     gameState <- varGet g
 
     let _ = runState (getCellField mined x y) gameState
@@ -58,7 +58,7 @@ genButtton p g c = do
                   , size := sz buttonWidth buttonHeight ]
 
     set b [ on click := reveal x y g b
-          , on clickRight := flag x y g b]
+          , on clickRight := flag x y st g b]
 
     return b
 
@@ -82,22 +82,26 @@ reveal x y game b _ = do
             varSet game newState
         _ -> return ()
 
-flag :: Int -> Int -> Var Minesweeper -> Button () -> Point -> IO ()
-flag x y game b _ = do
+flag :: Int -> Int -> StaticText () -> Var Minesweeper -> Button () -> Point -> IO ()
+flag x y st game b _ = do
     gameState <- varGet game
-    let
-        (revealedState, _) = runState (getCellField revealed x y) gameState
-        (flaggedState, _) = runState (getCellField flagged x y) gameState
+
+    let (revealedState, _) = runState (isRevealed x y) gameState
+        (flaggedState, _) = runState (isFlagged x y) gameState
 
     case (revealedState, flaggedState) of
         (False, False) -> do
-            let (_, newState) = runState (setFlagged x y) gameState
+            let (_, newState) = runState (flagCell x y) gameState
                 numFlags = _remainingFlags newState
+
+            print numFlags
+            set st [ text := ("Remaining Flags: " ++ show numFlags) ]
+
             set b [ text := "🚩" ]
             print newState
             varSet game newState
         (False, True) -> do
-            let (_, newState) = runState (unsetFlagged x y) gameState
+            let (_, newState) = runState (unflagCell x y) gameState
             set b [ text  := "" ]
             print newState
             varSet game newState
