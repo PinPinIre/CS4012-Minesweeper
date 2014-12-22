@@ -22,7 +22,7 @@ instance Show Minesweeper where
 
 type Game = State Minesweeper
 
-data Status = Won | Lose | Move deriving (Show, Eq)
+data Status = Won | Lose | OutOfFlags | Move deriving (Show, Eq)
 
 initMinesweeper :: StdGen -> Minesweeper
 initMinesweeper rng = Minesweeper { _board = initBoard 20 20 10 rng
@@ -67,13 +67,14 @@ revealCell x y = do
 
 flagCell :: Int -> Int -> Game Status
 flagCell x y = do
-    m <- get
-    if m ^. remainingFlags > 0 then do
+    numFlags <- use remainingFlags
+    if numFlags > 0 then do
         f <- isFlagged x y
         if not f then do
-            setFlagged x y
-            won <- isWon
+            setCellField flagged True x y
+            remainingFlags -= 1
 
+            won <- isWon
             if won then
                 return Won
             else
@@ -81,19 +82,18 @@ flagCell x y = do
         else
             return Move
     else
-        return Move
+        return OutOfFlags
+
+unflagCell :: Int -> Int -> Game ()
+unflagCell x y = do
+    setCellField flagged False x y
+    remainingFlags += 1
 
 isMined :: Int -> Int -> Game Bool
 isMined = getCellField mined
 
 isFlagged :: Int -> Int -> Game Bool
 isFlagged = getCellField flagged
-
-setFlagged :: Int -> Int -> Game ()
-setFlagged = setCellField flagged True
-
-unsetFlagged :: Int -> Int -> Game ()
-unsetFlagged = setCellField flagged False
 
 isRevealed :: Int -> Int -> Game Bool
 isRevealed = getCellField revealed

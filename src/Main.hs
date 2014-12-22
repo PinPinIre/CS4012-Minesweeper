@@ -3,11 +3,9 @@ module Main where
 import Board
 import Cell
 import Solver
-import Control.Lens
 import Control.Monad.State
 import Game
 import Graphics.UI.WX
-import qualified Graphics.UI.WX as WX
 import qualified Data.Vector as Vector
 import System.Random
 
@@ -24,40 +22,44 @@ gui :: IO ()
 gui = do
     rng <- newStdGen
 
-    g <- varCreate $ initMinesweeper rng
+    let minesweeper = initMinesweeper rng
+    g <- varCreate minesweeper
 
     f <- frame [ text := "Minesweeper!"
                , bgcolor := white]
 
+    let numFlags = _remainingFlags minesweeper
+    l <- staticText f [ text := ("Remaining Flags: " ++ show numFlags) ]
+
     p <- panel f []
 
-    _ <- genBoard p g
+    _ <- genBoard p l g
 
-    WX.set f [layout := widget p]
+    set f [ layout := margin 5 $ column 5 [floatTop $ widget p, floatLeft $ widget l] ]
 
-genBoard :: Panel () -> Var Minesweeper -> IO [[Button ()]]
-genBoard f g = do
+genBoard :: Panel () -> StaticText () -> Var Minesweeper -> IO [[Button ()]]
+genBoard p st g = do
     b <- varGet g
 
-    let boardCells = b ^. board . cells
+    let boardCells = _cells $ _board b
         cellsList = Vector.toList $ Vector.map Vector.toList boardCells
 
-    mapM (mapM (genButtton f g)) cellsList
+    mapM (mapM (genButtton p st g)) cellsList
 
-genButtton :: Panel () -> Var Minesweeper -> Cell -> IO (Button ())
-genButtton f g c = do
+genButtton :: Panel () -> StaticText () -> Var Minesweeper -> Cell -> IO (Button ())
+genButtton p st g c = do
     gameState <- varGet g
 
     let _ = runState (getCellField mined x y) gameState
-        x = c ^. xpos
-        y = c ^. ypos
+        x = _xpos c
+        y = _ypos c
 
-    b <- button f [ text := " "
+    b <- button p [ text := " "
                   , position := pt (x * buttonHeight) (y * buttonWidth)
                   , size := sz buttonWidth buttonHeight ]
 
-    WX.set b [ on click := reveal x y g b
-             , on clickRight := flag x y g b]
+    set b [ on click := reveal x y g b
+          , on clickRight := flag x y st g b]
 
     return b
 
@@ -67,38 +69,44 @@ reveal x y game b _ = do
 
     let (revealedState, _)  = runState (getCellField revealed x y) gameState
         (minedState, _)  = runState (getCellField mined x y) gameState
-        (_, newstate) = runState (setRevealed x y) gameState
+        (_, newState) = runState (setRevealed x y) gameState
 
     case (revealedState, minedState) of
         (False, False) -> do
             let (adj, _) = runState (getAdjacentMines x y) gameState
-            WX.set b [ text := show adj ]
-            print newstate
-            varSet game newstate
+            set b [ text := show adj ]
+            print newState
+            varSet game newState
         (False, _) -> do
-            WX.set b [ text  := "💣" ]
-            print newstate
-            varSet game newstate
+            set b [ text  := "💣" ]
+            print newState
+            varSet game newState
         _ -> return ()
 
-flag :: Int -> Int -> Var Minesweeper -> Button () -> Point -> IO ()
-flag x y game b _ = do
+flag :: Int -> Int -> StaticText () -> Var Minesweeper -> Button () -> Point -> IO ()
+flag x y st game b _ = do
     gameState <- varGet game
-    let
-        (revealedState, _) = runState (getCellField revealed x y) gameState
-        (flaggedState, _) = runState (getCellField flagged x y) gameState
+
+    let (revealedState, _) = runState (isRevealed x y) gameState
+        (flaggedState, _) = runState (isFlagged x y) gameState
 
     case (revealedState, flaggedState) of
         (False, False) -> do
-            let (_, newstate) = runState (setFlagged x y) gameState
-            WX.set b [ text  := "🚩" ]
-            print newstate
-            varSet game newstate
+            let (flagStatus, newState) = runState (flagCell x y) gameState
+                numFlags = _remainingFlags newState
+
+            unless (flagStatus == OutOfFlags) $ do
+                set st [ text := ("Remaining Flags: " ++ show numFlags) ]
+
+                set b [ text := "🚩" ]
+                print newState
+                varSet game newState
+
         (False, True) -> do
-            let (_, newstate) = runState (unsetFlagged x y) gameState
-            WX.set b [ text  := "" ]
-            print newstate
-            varSet game newstate
+            let (_, newState) = runState (unflagCell x y) gameState
+            set b [ text  := "" ]
+            print newState
+            varSet game newState
         _ -> return ()
 
 layoutBoard :: [[Button ()]] -> Layout
