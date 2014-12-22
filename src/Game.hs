@@ -43,6 +43,7 @@ isWon = do
 checkCellStatus :: Cell -> Bool
 checkCellStatus c
     | c ^. flagged && c ^. mined = True
+    | not c ^. mined             = True
     | otherwise                  = False
 
 revealCell :: Int -> Int -> Game Status
