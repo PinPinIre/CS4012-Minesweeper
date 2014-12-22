@@ -107,5 +107,5 @@ getCellField getter x y = do
     return $ fromJust $ m ^? board . cells . element y . element x . getter
 
 setCellField :: Setter Cell Cell a b -> b -> Int -> Int -> Game ()
-setCellField setter val x y = combinedSetter .= val
-    where combinedSetter = board . cells . element x . element y . setter
+setCellField setter val x y = combinedSetter .= valo
+    where combinedSetter = board . cells . element y . element x . setter
