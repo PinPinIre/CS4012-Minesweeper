@@ -55,11 +55,11 @@ genButtton f game (x, y) = do
 
     let _ = runState (getCellField mined x y) gameState
 
-    let xButton = x * buttonWidth
-    let yButton = y * buttonHeight
+    let xButton = x * buttonHeight
+    let yButton = y * buttonWidth
 
     b <- button f [ text := " "
-                  , position := pt yButton xButton
+                  , position := pt xButton yButton
                   , size := sz buttonWidth buttonHeight]
 
     WX.set b [ on click := reveal x y game b
@@ -75,7 +75,7 @@ reveal x y game b _ = do
         (minedState, _)  = runState (getCellField mined x y) gameState
         (_, newstate) = runState (setRevealed x y) gameState
 
-    case (minedState, revealedState) of
+    case (revealedState, minedState) of
         (False, False) -> do
             let (adj, _) = runState (getAdjacentMines x y) gameState
             WX.set b [ text := show adj ]
