@@ -71,7 +71,7 @@ reveal x y game b _ = do
         (minedState, _)  = runState (getCellField mined x y) gameState
         (_, newstate) = runState (setRevealed x y) gameState
 
-    case (minedState, revealedState) of
+    case (revealedState, minedState) of
         (False, False) -> do
             let (adj, _) = runState (getAdjacentMines x y) gameState
             WX.set b [ text := show adj ]
