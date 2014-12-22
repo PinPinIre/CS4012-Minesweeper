@@ -48,7 +48,6 @@ genButtton f g c = do
     gameState <- varGet g
 
     let _ = runState (getCellField mined x y) gameState
-
         x = c ^. xpos
         y = c ^. ypos
 
