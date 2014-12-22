@@ -91,15 +91,16 @@ flag x y st game b _ = do
 
     case (revealedState, flaggedState) of
         (False, False) -> do
-            let (_, newState) = runState (flagCell x y) gameState
+            let (flagStatus, newState) = runState (flagCell x y) gameState
                 numFlags = _remainingFlags newState
 
-            print numFlags
-            set st [ text := ("Remaining Flags: " ++ show numFlags) ]
+            unless (flagStatus == OutOfFlags) $ do
+                set st [ text := ("Remaining Flags: " ++ show numFlags) ]
 
-            set b [ text := "🚩" ]
-            print newState
-            varSet game newState
+                set b [ text := "🚩" ]
+                print newState
+                varSet game newState
+
         (False, True) -> do
             let (_, newState) = runState (unflagCell x y) gameState
             set b [ text  := "" ]

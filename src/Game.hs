@@ -22,7 +22,7 @@ instance Show Minesweeper where
 
 type Game = State Minesweeper
 
-data Status = Won | Lose | Move deriving (Show, Eq)
+data Status = Won | Lose | OutOfFlags | Move deriving (Show, Eq)
 
 initMinesweeper :: StdGen -> Minesweeper
 initMinesweeper rng = Minesweeper { _board = initBoard 20 20 10 rng
@@ -82,7 +82,7 @@ flagCell x y = do
         else
             return Move
     else
-        return Move
+        return OutOfFlags
 
 unflagCell :: Int -> Int -> Game ()
 unflagCell x y = do
