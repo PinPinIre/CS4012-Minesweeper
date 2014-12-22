@@ -21,35 +21,39 @@ gui :: IO ()
 gui = do
     rng <- newStdGen
 
-    g <- varCreate $ initMinesweeper rng
+    let minesweeper = initMinesweeper rng
+    g <- varCreate minesweeper
 
     f <- frame [ text := "Minesweeper!"
                , bgcolor := white]
+
+    let numFlags = _remainingFlags minesweeper
+    let l = label ("Remaining Flags: " ++ show numFlags)
 
     p <- panel f []
 
     _ <- genBoard p g
 
-    set f [layout := widget p]
+    set f [layout := margin 5 $ column 5 [floatTop $ widget p, l]]
 
 genBoard :: Panel () -> Var Minesweeper -> IO [[Button ()]]
-genBoard f g = do
+genBoard p g = do
     b <- varGet g
 
     let boardCells = _cells $ _board b
         cellsList = Vector.toList $ Vector.map Vector.toList boardCells
 
-    mapM (mapM (genButtton f g)) cellsList
+    mapM (mapM (genButtton p g)) cellsList
 
 genButtton :: Panel () -> Var Minesweeper -> Cell -> IO (Button ())
-genButtton f g c = do
+genButtton p g c = do
     gameState <- varGet g
 
     let _ = runState (getCellField mined x y) gameState
         x = _xpos c
         y = _ypos c
 
-    b <- button f [ text := " "
+    b <- button p [ text := " "
                   , position := pt (x * buttonHeight) (y * buttonWidth)
                   , size := sz buttonWidth buttonHeight ]
 
@@ -64,18 +68,18 @@ reveal x y game b _ = do
 
     let (revealedState, _)  = runState (getCellField revealed x y) gameState
         (minedState, _)  = runState (getCellField mined x y) gameState
-        (_, newstate) = runState (setRevealed x y) gameState
+        (_, newState) = runState (setRevealed x y) gameState
 
     case (revealedState, minedState) of
         (False, False) -> do
             let (adj, _) = runState (getAdjacentMines x y) gameState
             set b [ text := show adj ]
-            print newstate
-            varSet game newstate
+            print newState
+            varSet game newState
         (False, _) -> do
             set b [ text  := "💣" ]
-            print newstate
-            varSet game newstate
+            print newState
+            varSet game newState
         _ -> return ()
 
 flag :: Int -> Int -> Var Minesweeper -> Button () -> Point -> IO ()
@@ -87,15 +91,16 @@ flag x y game b _ = do
 
     case (revealedState, flaggedState) of
         (False, False) -> do
-            let (_, newstate) = runState (setFlagged x y) gameState
-            WX.set b [ text  := "🚩" ]
-            print newstate
-            varSet game newstate
+            let (_, newState) = runState (setFlagged x y) gameState
+                numFlags = _remainingFlags newState
+            set b [ text := "🚩" ]
+            print newState
+            varSet game newState
         (False, True) -> do
-            let (_, newstate) = runState (unsetFlagged x y) gameState
-            WX.set b [ text  := "" ]
-            print newstate
-            varSet game newstate
+            let (_, newState) = runState (unsetFlagged x y) gameState
+            set b [ text  := "" ]
+            print newState
+            varSet game newState
         _ -> return ()
 
 layoutBoard :: [[Button ()]] -> Layout

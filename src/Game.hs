@@ -58,6 +58,8 @@ revealCell x y = do
             setRevealed x y
             won <- isWon
 
+            remainingFlags -= 1
+
             if won then
                 return Won
             else
