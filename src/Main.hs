@@ -52,15 +52,19 @@ genRow f game =  mapM (genButtton f game)
 genButtton :: Panel () -> Var Minesweeper -> (Int, Int) -> IO (Button ())
 genButtton f game (x, y) = do
     gameState <- varGet game
+
     let _ = runState (getCellField mined x y) gameState
+
     let xButton = x * buttonHeight
     let yButton = y * buttonWidth
+
     b <- button f [ text := " "
                   , position := pt xButton yButton
                   , size := sz buttonWidth buttonHeight]
 
     WX.set b [ on click := reveal x y game b
              , on clickRight := flag x y game b]
+
     return b
 
 reveal :: Int -> Int -> Var Minesweeper -> Button () -> Point -> IO ()
