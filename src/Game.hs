@@ -104,7 +104,7 @@ getAdjacentMines = getCellField adjacentMines
 getCellField :: Getter Cell a -> Int -> Int -> Game a
 getCellField getter x y = do
     m <- get
-    return $ fromJust $ m ^? board . cells . element y . element x . getter
+    return $ fromJust $ m ^? board . cells . element x . element y . getter
 
 setCellField :: Setter Cell Cell a b -> b -> Int -> Int -> Game ()
 setCellField setter val x y = combinedSetter .= val
