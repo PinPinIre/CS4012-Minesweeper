@@ -22,7 +22,7 @@ instance Show Board where
 initBoard :: Int -> Int -> Int -> StdGen -> Board
 initBoard w h mines rng = adjacencyBoard
     where
-        genCells = [[initCell y x | x <- [0..(w - 1)]] | y <- [0..(h - 1)]]
+        genCells = [[initCell x y | y <- [0..(h - 1)]] | x <- [0..(w - 1)]]
         board = Board (Vector.fromList $ map Vector.fromList genCells) w h
         minedBoard = addMines mines rng board
         adjacencyBoard = calculateAdjacency minedBoard
