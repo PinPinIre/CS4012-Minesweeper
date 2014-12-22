@@ -53,7 +53,7 @@ genButtton f g c = do
 
     b <- button f [ text := " "
                   , position := pt (x * buttonHeight) (y * buttonWidth)
-                  , size := sz buttonWidth buttonHeight]
+                  , size := sz buttonWidth buttonHeight ]
 
     WX.set b [ on click := reveal x y g b
              , on clickRight := flag x y g b]
