@@ -3,6 +3,7 @@ module Main where
 import Board
 import Cell
 import Control.Lens hiding (set)
+import Solver
 import Control.Monad.State
 import qualified Control.Monad.State as State
 import Game
