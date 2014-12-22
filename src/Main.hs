@@ -7,10 +7,8 @@ import Control.Monad.State
 import Game
 import Graphics.UI.WX
 import qualified Graphics.UI.WX as WX
-import Data.List (groupBy)
 import qualified Data.Vector as Vector
 import System.Random
-import qualified Data.Function as DF (on)
 
 buttonWidth :: Int
 buttonWidth = 30
@@ -100,6 +98,3 @@ layoutBoard b = grid 0 0 $ map layoutRow b
 
 layoutRow :: [Button ()] -> [Layout]
 layoutRow r = [row 0 $ map widget r]
-
-groupRows :: [(Int, a)] -> [[(Int, a)]]
-groupRows = groupBy ((==) `DF.on` fst)
