@@ -2,7 +2,9 @@ module Main where
 
 import Board
 import Cell
+import Control.Lens hiding (set)
 import Control.Monad.State
+import qualified Control.Monad.State as State
 import Game
 import Graphics.UI.WX
 import qualified Data.Vector as Vector
@@ -49,8 +51,7 @@ genButtton :: Panel () -> StaticText () -> Var Minesweeper -> Cell -> IO (Button
 genButtton p st g c = do
     gameState <- varGet g
 
-    let _ = runState (getCellField mined x y) gameState
-        x = _xpos c
+    let x = _xpos c
         y = _ypos c
 
     b <- button p [ text := " "
@@ -64,52 +65,56 @@ genButtton p st g c = do
 
 reveal :: Int -> Int -> Var Minesweeper -> Button () -> Point -> IO ()
 reveal x y game b _ = do
-    gameState <- varGet game
+    g <- varGet game
+    newState <- execStateT (revealGame x y b) g
+    varSet game newState
 
-    let (revealedState, _)  = runState (getCellField revealed x y) gameState
-        (minedState, _)  = runState (getCellField mined x y) gameState
-        (_, newState) = runState (setRevealed x y) gameState
+revealGame :: Int -> Int -> Button () -> Game ()
+revealGame x y b = do
+    r <- isRevealed x y
+    m <- isMined x y
 
-    case (revealedState, minedState) of
+    status <- setRevealed x y
+    newState <- State.get
+
+    case (r, m) of
         (False, False) -> do
-            let (adj, _) = runState (getAdjacentMines x y) gameState
-            set b [ text := show adj ]
-            print newState
-            varSet game newState
+            adj <- getAdjacentMines x y
+            liftIO $ set b [ text := show adj ]
+            liftIO $ print newState
         (False, _) -> do
-            set b [ text  := "💣" ]
-            print newState
-            varSet game newState
+            liftIO $ set b [ text  := "💣" ]
+            liftIO $ print newState
         _ -> return ()
 
 flag :: Int -> Int -> StaticText () -> Var Minesweeper -> Button () -> Point -> IO ()
 flag x y st game b _ = do
-    gameState <- varGet game
+    g <- varGet game
+    newState <- execStateT (flagGame x y st b) g
+    varSet game newState
 
-    let (revealedState, _) = runState (isRevealed x y) gameState
-        (flaggedState, _) = runState (isFlagged x y) gameState
+flagGame :: Int -> Int -> StaticText () -> Button () -> Game ()
+flagGame x y st b = do
+    r <- isRevealed x y
+    f <- isFlagged x y
 
-    case (revealedState, flaggedState) of
+    case (r, f) of
         (False, False) -> do
-            let (flagStatus, newState) = runState (flagCell x y) gameState
-                numFlags = _remainingFlags newState
+            status <- flagCell x y
+            numFlags <- use remainingFlags
 
-            unless (flagStatus == OutOfFlags) $ do
-                set st [ text := ("Remaining Flags: " ++ show numFlags) ]
+            newState <- State.get
 
-                set b [ text := "🚩" ]
-                print newState
-                varSet game newState
+            unless (status == OutOfFlags) $ do
+                liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
+
+                liftIO $ set b [ text := "🚩" ]
+                liftIO $ print newState
 
         (False, True) -> do
-            let (_, newState) = runState (unflagCell x y) gameState
-            set b [ text  := "" ]
-            print newState
-            varSet game newState
+            unflagCell x y
+            newState <- State.get
+
+            liftIO $ set b [ text  := "" ]
+            liftIO $ print newState
         _ -> return ()
-
-layoutBoard :: [[Button ()]] -> Layout
-layoutBoard b = grid 0 0 $ map layoutRow b
-
-layoutRow :: [Button ()] -> [Layout]
-layoutRow r = [row 0 $ map widget r]

@@ -20,7 +20,7 @@ makeLenses ''Minesweeper
 instance Show Minesweeper where
     show = show . view board
 
-type Game = State Minesweeper
+type Game = StateT Minesweeper IO
 
 data Status = Won | Lose | OutOfFlags | Move deriving (Show, Eq)
 
