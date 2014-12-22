@@ -8,6 +8,7 @@ import Game
 import Graphics.UI.WX
 import qualified Graphics.UI.WX as WX
 import Data.List (groupBy)
+import qualified Data.Vector as Vector
 import System.Random
 import qualified Data.Function as DF (on)
 
@@ -24,46 +25,40 @@ gui :: IO ()
 gui = do
     rng <- newStdGen
 
-    let minesweeper = initMinesweeper rng
-    game <- varCreate minesweeper
-
-    let w = minesweeper ^. board . width - 1
-        h = minesweeper ^. board . height - 1
-        cellIndexes = groupRows $ liftM2 (,) [0..w] [0..h]
+    g <- varCreate $ initMinesweeper rng
 
     f <- frame [ text := "Minesweeper!"
                , bgcolor := white]
 
     p <- panel f []
 
-    status <- statusField [text := "Welcome to Minesweeper"]
+    _ <- genBoard p g
 
-    _ <- genBoard p game cellIndexes
+    WX.set f [layout := widget p]
 
-    WX.set f [ statusBar := [status]
-             , layout := widget p]
+genBoard :: Panel () -> Var Minesweeper -> IO [[Button ()]]
+genBoard f g = do
+    b <- varGet g
 
-genBoard :: Panel () -> Var Minesweeper -> [[(Int, Int)]] -> IO [[Button ()]]
-genBoard f game  = mapM (genRow f game)
+    let boardCells = b ^. board . cells
+        cellsList = Vector.toList $ Vector.map Vector.toList boardCells
 
-genRow :: Panel () -> Var Minesweeper -> [(Int, Int)] -> IO [Button ()]
-genRow f game =  mapM (genButtton f game)
+    mapM (mapM (genButtton f g)) cellsList
 
-genButtton :: Panel () -> Var Minesweeper -> (Int, Int) -> IO (Button ())
-genButtton f game (x, y) = do
-    gameState <- varGet game
+genButtton :: Panel () -> Var Minesweeper -> Cell -> IO (Button ())
+genButtton f g c = do
+    gameState <- varGet g
 
     let _ = runState (getCellField mined x y) gameState
-
-    let xButton = x * buttonWidth
-    let yButton = y * buttonHeight
+        x = c ^. xpos
+        y = c ^. ypos
 
     b <- button f [ text := " "
-                  , position := pt yButton xButton
+                  , position := pt (x * buttonWidth) (y * buttonHeight)
                   , size := sz buttonWidth buttonHeight]
 
-    WX.set b [ on click := reveal x y game b
-             , on clickRight := flag x y game b]
+    WX.set b [ on click := reveal x y g b
+             , on clickRight := flag x y g b]
 
     return b
 
