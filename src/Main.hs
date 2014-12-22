@@ -1,8 +1,10 @@
 module Main where
 
-import Game
+import Board
 import Cell
+import Control.Lens
 import Control.Monad.State
+import Game
 import Graphics.UI.WX
 import qualified Graphics.UI.WX as WX
 import Data.List (groupBy)
@@ -21,9 +23,13 @@ main = start gui
 gui :: IO ()
 gui = do
     rng <- newStdGen
-    game <- varCreate $ initMinesweeper rng
 
-    let cells = groupRows $ liftM2 (,) [0..19] [0..19]
+    let minesweeper = initMinesweeper rng
+    game <- varCreate minesweeper
+
+    let w = minesweeper ^. board . width - 1
+        h = minesweeper ^. board . height - 1
+        cellIndexes = groupRows $ liftM2 (,) [0..w] [0..h]
 
     f <- frame [ text := "Minesweeper!"
                , bgcolor := white]
@@ -32,7 +38,7 @@ gui = do
 
     status <- statusField [text := "Welcome to Minesweeper"]
 
-    _ <- genBoard p game cells
+    _ <- genBoard p game cellIndexes
 
     WX.set f [ statusBar := [status]
              , layout := widget p]
@@ -49,10 +55,10 @@ genButtton f game (x, y) = do
 
     let _ = runState (getCellField mined x y) gameState
 
-    let xButton = x * buttonHeight
-    let yButton = y * buttonWidth
+    let xButton = x * buttonWidth
+    let yButton = y * buttonHeight
 
-    b <- button f [ text := ""
+    b <- button f [ text := " "
                   , position := pt yButton xButton
                   , size := sz buttonWidth buttonHeight]
 
@@ -65,15 +71,14 @@ reveal :: Int -> Int -> Var Minesweeper -> Button () -> Point -> IO ()
 reveal x y game b _ = do
     gameState <- varGet game
 
-    let (flipped, _)  = runState (getCellField revealed x y) gameState
-        (ismined, _)  = runState (getCellField mined x y) gameState
+    let (revealedState, _)  = runState (getCellField revealed x y) gameState
+        (minedState, _)  = runState (getCellField mined x y) gameState
         (_, newstate) = runState (setRevealed x y) gameState
 
-    case (flipped, ismined) of
+    case (minedState, revealedState) of
         (False, False) -> do
-            let
-                (adj, _) = runState (getAdjacentMines x y) gameState
-            WX.set b [ text  := show adj ]
+            let (adj, _) = runState (getAdjacentMines x y) gameState
+            WX.set b [ text := show adj ]
             print newstate
             varSet game newstate
         (False, _) -> do
@@ -86,10 +91,10 @@ flag :: Int -> Int -> Var Minesweeper -> Button () -> Point -> IO ()
 flag x y game b _ = do
     gameState <- varGet game
     let
-        (flipped, _) = runState (getCellField revealed x y) gameState
+        (revealedState, _) = runState (getCellField revealed x y) gameState
         (_, newstate) = runState (setFlagged x y) gameState
 
-    unless flipped $ do
+    unless revealedState $ do
         WX.set b [ text  := "🚩" ]
         print newstate
         varSet game newstate

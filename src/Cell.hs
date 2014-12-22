@@ -20,7 +20,7 @@ instance Show Cell where
         | _flagged c           = "[ F ]"
         | _revealed c          = "[ - ]"
         | _mined c             = "[ * ]"
-        | _adjacentMines c > 0 = "[ " ++ show $ _adjacentMines c $ ++ " ]"
+        | _adjacentMines c > 0 = "[ " ++ (show $ _adjacentMines c) ++ " ]"
         | otherwise            = "[   ]"
 
 initCell :: Int -> Int -> Cell
