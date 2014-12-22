@@ -98,20 +98,20 @@ flagGame x y st b = do
     case (r, f) of
         (False, False) -> do
             status <- flagCell x y
-            numFlags <- use remainingFlags
-
-            newState <- State.get
-
             unless (status == OutOfFlags) $ do
+                numFlags <- use remainingFlags
                 liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
-
                 liftIO $ set b [ text := "🚩" ]
+
+                newState <- State.get
                 liftIO $ print newState
 
         (False, True) -> do
             unflagCell x y
-            newState <- State.get
+            numFlags <- use remainingFlags
+            liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
+            liftIO $ set b [ text  := " " ]
 
-            liftIO $ set b [ text  := "" ]
+            newState <- State.get
             liftIO $ print newState
         _ -> return ()
