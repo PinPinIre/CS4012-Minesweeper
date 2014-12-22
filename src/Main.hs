@@ -50,8 +50,6 @@ genBoard p st g = do
 
 genButtton :: Panel () -> StaticText () -> Var Minesweeper -> Cell -> IO (Button ())
 genButtton p st g c = do
-    gameState <- varGet g
-
     let x = _xpos c
         y = _ypos c
 
@@ -72,21 +70,19 @@ reveal x y game b _ = do
 
 revealGame :: Int -> Int -> Button () -> Game ()
 revealGame x y b = do
-    r <- isRevealed x y
-    m <- isMined x y
+    status <- revealCell x y
 
-    status <- setRevealed x y
-    newState <- State.get
-
-    case (r, m) of
-        (False, False) -> do
+    case status of
+        Won -> liftIO $ putStrLn "You win!"
+        Lose -> do
+            liftIO $ set b [ text  := "💣" ]
+            liftIO $ putStrLn "You Lose!"
+        _ -> do
             adj <- getAdjacentMines x y
             liftIO $ set b [ text := show adj ]
-            liftIO $ print newState
-        (False, _) -> do
-            liftIO $ set b [ text  := "💣" ]
-            liftIO $ print newState
-        _ -> return ()
+
+    newState <- State.get
+    liftIO $ print newState
 
 flag :: Int -> Int -> StaticText () -> Var Minesweeper -> Button () -> Point -> IO ()
 flag x y st game b _ = do

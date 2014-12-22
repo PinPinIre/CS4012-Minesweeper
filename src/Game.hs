@@ -31,9 +31,7 @@ initMinesweeper rng = Minesweeper { _board = initBoard 20 20 10 rng
 
 isWon :: Game Bool
 isWon = do
-    m <- get
-
-    let boardCells = m ^. board . cells
+    boardCells <- use $ board . cells
     let concatCells = Vector.toList $ Vector.concat $ Vector.toList boardCells
     let cellStates = map checkCellStatus concatCells
 
