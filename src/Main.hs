@@ -35,18 +35,18 @@ gui = do
 
     p <- panel f []
 
-    _ <- genBoard p l g
+    genBoard p l g
 
     set f [ layout := margin 5 $ column 5 [floatTop $ widget p, floatLeft $ widget l] ]
 
-genBoard :: Panel () -> StaticText () -> Var Minesweeper -> IO [[Button ()]]
+genBoard :: Panel () -> StaticText () -> Var Minesweeper -> IO ()
 genBoard p st g = do
     b <- varGet g
 
-    let boardCells = _cells $ _board b
+    let boardCells = b ^. board . cells
         cellsList = Vector.toList $ Vector.map Vector.toList boardCells
 
-    mapM (mapM (genButtton p st g)) cellsList
+    mapM_ (mapM (genButtton p st g)) cellsList
 
 genButtton :: Panel () -> StaticText () -> Var Minesweeper -> Cell -> IO (Button ())
 genButtton p st g c = do
@@ -75,7 +75,9 @@ revealGame x y b = do
     case status of
         Lose -> do
             liftIO $ set b [ text  := "💣" ]
-            liftIO $ putStrLn "You Lose!"
+            fr <- liftIO $ frame [ text := "Minesweeper!" ]
+            l <- liftIO $ staticText fr [ text := "You Lose!"]
+            liftIO $ set fr [ layout := margin 100 $ floatCenter $ widget l ]
         _ -> do
             adj <- getAdjacentMines x y
             liftIO $ set b [ text := show adj ]
@@ -105,7 +107,11 @@ flagGame x y st b = do
 
                     newState <- State.get
                     liftIO $ print newState
-                Won -> liftIO $ putStrLn "You win!"
+                Won -> liftIO $ do
+                    fr <- liftIO $ frame [ text := "Minesweeper!"
+                                         , bgcolor := white]
+                    l <- liftIO $ staticText fr [ text := "You won!"]
+                    liftIO $ set fr [ layout := widget l ]
                 _ -> do
                     adj <- getAdjacentMines x y
                     liftIO $ set b [ text := show adj ]
