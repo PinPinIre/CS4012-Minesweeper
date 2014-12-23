@@ -55,8 +55,8 @@ revealCell x y = do
             return Lose
         else do
             setRevealed x y
-            won <- isWon
 
+            won <- isWon
             if won then
                 return Won
             else

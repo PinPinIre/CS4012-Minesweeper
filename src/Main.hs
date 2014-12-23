@@ -73,7 +73,6 @@ revealGame x y b = do
     status <- revealCell x y
 
     case status of
-        Won -> liftIO $ putStrLn "You win!"
         Lose -> do
             liftIO $ set b [ text  := "💣" ]
             liftIO $ putStrLn "You Lose!"
@@ -98,13 +97,18 @@ flagGame x y st b = do
     case (r, f) of
         (False, False) -> do
             status <- flagCell x y
-            unless (status == OutOfFlags) $ do
-                numFlags <- use remainingFlags
-                liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
-                liftIO $ set b [ text := "🚩" ]
+            case status of
+                OutOfFlags -> do
+                    numFlags <- use remainingFlags
+                    liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
+                    liftIO $ set b [ text := "🚩" ]
 
-                newState <- State.get
-                liftIO $ print newState
+                    newState <- State.get
+                    liftIO $ print newState
+                Won -> liftIO $ putStrLn "You win!"
+                _ -> do
+                    adj <- getAdjacentMines x y
+                    liftIO $ set b [ text := show adj ]
 
         (False, True) -> do
             unflagCell x y
