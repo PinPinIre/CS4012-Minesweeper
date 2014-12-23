@@ -1,8 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Minesweeper.Board where
+module Board where
 
-import Minesweeper.Cell
+import Cell
 
 import Control.Lens
 import Data.Vector (Vector)
@@ -52,3 +52,9 @@ countAdjacentMines mines c
     where
         m = Vector.head mines
         t = Vector.tail mines
+
+minedCells :: Board -> Int
+minedCells b = length mcells
+    where
+        boardCells = b ^. cells
+        mcells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter _mined) boardCells

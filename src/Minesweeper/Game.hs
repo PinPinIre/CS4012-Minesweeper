@@ -1,9 +1,9 @@
 {-# LANGUAGE TemplateHaskell, RankNTypes #-}
 
-module Minesweeper.Game where
+module Game where
 
-import Minesweeper.Board
-import Minesweeper.Cell
+import Board
+import Cell
 
 import Control.Lens
 import Control.Monad.State

@@ -1,8 +1,8 @@
-module Minesweeper.Solver where
+module Solver where
 
-import Minesweeper.Board
-import Minesweeper.Cell
-import Minesweeper.Game
+import Board
+import Cell
+import Game
 
 import Control.Lens
 import Control.Monad.State

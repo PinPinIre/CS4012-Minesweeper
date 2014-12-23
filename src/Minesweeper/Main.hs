@@ -1,14 +1,15 @@
 module Main where
 
-import Minesweeper.Board
-import Minesweeper.Cell
-import Minesweeper.Game
-import Minesweeper.Solver
+import Board
+import Cell
+import Game
+import Solver
+import Tests
 
 import Control.Lens hiding (set)
 import Control.Monad.State
 import qualified Control.Monad.State as State
-import Graphics.UI.WX
+--import Graphics.UI.WX
 import qualified Data.Vector as Vector
 import System.Exit
 import System.Random
@@ -20,7 +21,10 @@ buttonHeight :: Int
 buttonHeight = 30
 
 main :: IO ()
-main = start gui
+main = test True
+
+
+{-
 
 gui :: IO ()
 gui = do
@@ -143,3 +147,5 @@ playAgain _ = return ()
 
 quit :: Point -> IO ()
 quit _ = exitSuccess
+
+-}
