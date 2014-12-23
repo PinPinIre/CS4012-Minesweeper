@@ -17,18 +17,26 @@ test True = do
 
 test False = return ()
 
+--test proposition
 prop_test :: Int -> Int -> Bool
 prop_test x y = (x + y) == (y + x)
 
-
 --check if number of mines added is same as placed on board
-prop_minesadded :: Int -> Bool
+prop_minesadded :: Int -> IO Bool
 prop_minesadded mineNumber = do
-    let board = generateBoard
-    return  mineNumber == (minedCells board)
+    board <- generateBoard
+    let mines = minedCells board
+    let result = (mineNumber == mines)
+    return result
 
 generateBoard :: IO Board
 generateBoard = do
     rng <- newStdGen
     let board = initBoard 20 20 10 rng
     return board
+
+minedCells :: Board -> Int
+minedCells b = length mcells
+    where
+        boardCells = b ^. cells
+        mcells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter _mined) boardCells

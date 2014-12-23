@@ -53,8 +53,4 @@ countAdjacentMines mines c
         m = Vector.head mines
         t = Vector.tail mines
 
-minedCells :: Board -> Int
-minedCells b = length mcells
-    where
-        boardCells = b ^. cells
-        mcells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter _mined) boardCells
+
