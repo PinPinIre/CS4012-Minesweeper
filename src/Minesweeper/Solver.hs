@@ -6,7 +6,6 @@ import Minesweeper.Game
 
 import Control.Lens
 import Control.Monad.State
-import Data.Vector (Vector)
 import Data.List (delete, nub)
 import Data.Maybe
 import qualified Data.Vector as Vector
