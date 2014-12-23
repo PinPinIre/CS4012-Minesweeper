@@ -33,21 +33,22 @@ gui = do
 
     let numFlags = minesweeper ^. remainingFlags
     l <- staticText f [ text := ("Remaining Flags: " ++ show numFlags) ]
-
     p <- panel f []
+    p2 <- panel f []
 
-    genBoard p l g
+    bs <- genBoard p l g
+    b <- button p2 [ text := "Solve"
+                  , on click := solve g bs]
+    set f [ layout := margin 5 $ column 5 [floatTop $ widget p, floatLeft $ widget l, floatRight $ widget p2] ]
 
-    set f [ layout := margin 5 $ column 5 [floatTop $ widget p, floatLeft $ widget l] ]
-
-genBoard :: Panel () -> StaticText () -> Var Minesweeper -> IO ()
+genBoard :: Panel () -> StaticText () -> Var Minesweeper -> IO ([[Button ()]])
 genBoard p st g = do
     b <- varGet g
 
     let boardCells = b ^. board . cells
         cellsList = Vector.toList $ Vector.map Vector.toList boardCells
 
-    mapM_ (mapM (genButtton p st g)) cellsList
+    mapM (mapM (genButtton p st g)) cellsList
 
 genButtton :: Panel () -> StaticText () -> Var Minesweeper -> Cell -> IO (Button ())
 genButtton p st g c = do
@@ -130,3 +131,18 @@ flagGame x y st b = do
             newState <- State.get
             liftIO $ print newState
         _ -> return ()
+
+solve :: Var Minesweeper -> [[Button ()]] -> Point -> IO ()
+solve game bs _ = do
+    g <- varGet game
+    let (safeMoves, _) = runState findSafeSquares g
+    liftIO $ print safeMoves
+    revealList game bs safeMoves
+    return ()
+
+revealList :: Var Minesweeper -> [[Button ()]] -> [(Int, Int)] -> IO ()
+revealList game bs cs = do
+    mapM (\(x, y) -> do
+            let b = ((bs)!!y)!!x
+            reveal y x game b (pt 0 0)) cs
+    return ()
