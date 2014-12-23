@@ -10,6 +10,7 @@ import Control.Monad.State
 import qualified Control.Monad.State as State
 import Graphics.UI.WX
 import qualified Data.Vector as Vector
+import System.Exit
 import System.Random
 
 buttonWidth :: Int
@@ -25,13 +26,13 @@ gui :: IO ()
 gui = do
     rng <- newStdGen
 
-    let minesweeper = initMinesweeper rng
-    g <- varCreate minesweeper
+    let game = initGame rng
+    g <- varCreate game
 
-    f <- frame [ text := "Minesweeper!"
+    f <- frame [ text := "Minesweeper"
                , bgcolor := white]
 
-    let numFlags = minesweeper ^. remainingFlags
+    let numFlags = game ^. remainingFlags
     l <- staticText f [ text := ("Remaining Flags: " ++ show numFlags) ]
     p <- panel f []
     p2 <- panel f []
@@ -41,7 +42,7 @@ gui = do
                   , on click := solve g bs]
     set f [ layout := margin 5 $ column 5 [floatTop $ widget p, floatLeft $ widget l, floatRight $ widget p2] ]
 
-genBoard :: Panel () -> StaticText () -> Var Minesweeper -> IO ([[Button ()]])
+genBoard :: Panel () -> StaticText () -> Var Game -> IO ([[Button ()]])
 genBoard p st g = do
     b <- varGet g
 
@@ -50,7 +51,7 @@ genBoard p st g = do
 
     mapM (mapM (genButtton p st g)) cellsList
 
-genButtton :: Panel () -> StaticText () -> Var Minesweeper -> Cell -> IO (Button ())
+genButtton :: Panel () -> StaticText () -> Var Game -> Cell -> IO (Button ())
 genButtton p st g c = do
     let x = _xpos c
         y = _ypos c
@@ -64,22 +65,55 @@ genButtton p st g c = do
 
     return b
 
-reveal :: Int -> Int -> Var Minesweeper -> Button () -> Point -> IO ()
+reveal :: Int -> Int -> Var Game -> Button () -> Point -> IO ()
 reveal x y game b _ = do
     g <- varGet game
     newState <- execStateT (revealGame x y b) g
     varSet game newState
 
-revealGame :: Int -> Int -> Button () -> Game ()
+revealGame :: Int -> Int -> Button () -> GameState ()
 revealGame x y b = do
-    status <- revealCell x y
+    status <- toggleRevealCell x y
 
     case status of
+        Move -> do
+            adj <- getAdjacentMines x y
+            liftIO $ set b [ text := show adj ]
+
         Lose -> do
             liftIO $ set b [ text  := "💣" ]
-            fr <- liftIO $ frame [ text := "Minesweeper!" ]
-            l <- liftIO $ staticText fr [ text := "You Lose!"]
-            liftIO $ set fr [ layout := margin 100 $ floatCenter $ widget l ]
+            liftIO $ presentAlert "You Lost!"
+
+        _ -> return ()
+
+    newState <- State.get
+    liftIO $ print newState
+
+flag :: Int -> Int -> StaticText () -> Var Game -> Button () -> Point -> IO ()
+flag x y st game b _ = do
+    g <- varGet game
+    newState <- execStateT (flagGame x y st b) g
+    varSet game newState
+
+flagGame :: Int -> Int -> StaticText () -> Button () -> GameState ()
+flagGame x y st b = do
+    status <- toggleFlagCell x y
+
+    case status of
+        Move -> do
+            numFlags <- use remainingFlags
+            liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
+
+            f <- isFlagged x y
+            if f then
+                liftIO $ set b [ text := "🚩" ]
+            else
+                liftIO $ set b [ text := "" ]
+
+        Won -> liftIO $ presentAlert "You Won!"
+
+        Error -> return ()
+
         _ -> do
             adj <- getAdjacentMines x y
             liftIO $ set b [ text := show adj ]
@@ -87,52 +121,31 @@ revealGame x y b = do
     newState <- State.get
     liftIO $ print newState
 
-flag :: Int -> Int -> StaticText () -> Var Minesweeper -> Button () -> Point -> IO ()
-flag x y st game b _ = do
-    g <- varGet game
-    newState <- execStateT (flagGame x y st b) g
-    varSet game newState
+presentAlert :: String -> IO ()
+presentAlert t = do
+    f  <- frame [ text := "Minesweeper"]
 
-flagGame :: Int -> Int -> StaticText () -> Button () -> Game ()
-flagGame x y st b = do
-    r <- isRevealed x y
-    f <- isFlagged x y
+    l  <- staticText f [ text := t]
 
-    case (r, f) of
-        (False, False) -> do
-            status <- flagCell x y
-            case status of
-                Move -> do
-                    numFlags <- use remainingFlags
-                    liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
-                    liftIO $ set b [ text := "🚩" ]
+    b1 <- button f [ text := "Play Again"
+                   , size := sz 75 30 ]
+    b2 <- button f [ text := "Quit"
+                   , size := sz 75 30 ]
 
-                    newState <- State.get
-                    liftIO $ print newState
+    set b1 [ on click := playAgain ]
+    set b2 [ on click := quit ]
 
-                OutOfFlags -> return ()
+    set f [ layout := marginWidth 20 $ marginBottom $ marginTop $
+                      marginWidth 150 $ marginLeft $ marginRight $
+                      column 20 [floatCenter $ widget l, row 10 [widget b1, widget b2]] ]
 
-                Won -> liftIO $ do
-                    fr <- liftIO $ frame [ text := "Minesweeper!"
-                                         , bgcolor := white]
-                    l <- liftIO $ staticText fr [ text := "You won!"]
-                    liftIO $ set fr [ layout := widget l ]
+playAgain :: Point -> IO ()
+playAgain _ = return ()
 
-                _ -> do
-                    adj <- getAdjacentMines x y
-                    liftIO $ set b [ text := show adj ]
+quit :: Point -> IO ()
+quit _ = exitSuccess
 
-        (False, True) -> do
-            unflagCell x y
-            numFlags <- use remainingFlags
-            liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
-            liftIO $ set b [ text  := " " ]
-
-            newState <- State.get
-            liftIO $ print newState
-        _ -> return ()
-
-solve :: Var Minesweeper -> [[Button ()]] -> Point -> IO ()
+solve :: Var Game -> [[Button ()]] -> Point -> IO ()
 solve game bs _ = do
     g <- varGet game
     let (safeMoves, _) = runState findSafeSquares g
@@ -140,7 +153,7 @@ solve game bs _ = do
     revealList game bs safeMoves
     return ()
 
-revealList :: Var Minesweeper -> [[Button ()]] -> [(Int, Int)] -> IO ()
+revealList :: Var Game -> [[Button ()]] -> [(Int, Int)] -> IO ()
 revealList game bs cs = do
     mapM (\(x, y) -> do
             let b = ((bs)!!y)!!x

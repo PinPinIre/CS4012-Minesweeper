@@ -11,26 +11,26 @@ import Data.Maybe
 import qualified Data.Vector as Vector (concat, toList)
 import System.Random
 
-data Minesweeper = Minesweeper
+data Game = Game
     { _board :: Board
     , _remainingFlags :: Int
     }
 
-makeLenses ''Minesweeper
+makeLenses ''Game
 
-instance Show Minesweeper where
+instance Show Game where
     show = show . view board
 
-type Game = StateT Minesweeper IO
+type GameState = StateT Game IO
 
-data Status = Won | Lose | OutOfFlags | Move deriving (Show, Eq)
+data Status = Won | Lose | Error | Move deriving (Show, Eq)
 
-initMinesweeper :: StdGen -> Minesweeper
-initMinesweeper rng = Minesweeper { _board = initBoard 20 20 10 rng
-                                  , _remainingFlags = 10
-                                  }
+initGame :: StdGen -> Game
+initGame rng = Game { _board = initBoard 20 20 10 rng
+                    , _remainingFlags = 10
+                    }
 
-isWon :: Game Bool
+isWon :: GameState Bool
 isWon = do
     boardCells <- use $ board . cells
     let concatCells = Vector.toList $ Vector.concat $ Vector.toList boardCells
@@ -47,10 +47,12 @@ checkCellStatus c
     | not (c ^. mined)           = True
     | otherwise                  = False
 
-revealCell :: Int -> Int -> Game Status
-revealCell x y = do
+toggleRevealCell :: Int -> Int -> GameState Status
+toggleRevealCell x y = do
     r <- isRevealed x y
-    if not r then do
+    f <- isFlagged x y
+
+    if not r && not f then do
         m <- isMined x y
         if m then
             return Lose
@@ -63,49 +65,54 @@ revealCell x y = do
             else
                 return Move
     else
-        return Move
+        return Error
 
-flagCell :: Int -> Int -> Game Status
-flagCell x y = do
+toggleFlagCell :: Int -> Int -> GameState Status
+toggleFlagCell x y = do
     numFlags <- use remainingFlags
-    if numFlags > 0 then do
-        f <- isFlagged x y
-        if not f then do
-            setCellField flagged True x y
-            remainingFlags -= 1
 
-            won <- isWon
-            if won then
-                return Won
-            else
+    if numFlags > 0 then do
+        r <- isRevealed x y
+
+        if not r then do
+            f <- isFlagged x y
+
+            if not f then do
+                setCellField flagged True x y
+                remainingFlags -= 1
+
+                won <- isWon
+                if won then
+                    return Won
+                else
+                    return Move
+            else do
+                setCellField flagged False x y
+                remainingFlags += 1
+
                 return Move
         else
-            return Move
+            return Error
     else
-        return OutOfFlags
+        return Error
 
-unflagCell :: Int -> Int -> Game ()
-unflagCell x y = do
-    setCellField flagged False x y
-    remainingFlags += 1
-
-isMined :: Int -> Int -> Game Bool
+isMined :: Int -> Int -> GameState Bool
 isMined = getCellField mined
 
-isFlagged :: Int -> Int -> Game Bool
+isFlagged :: Int -> Int -> GameState Bool
 isFlagged = getCellField flagged
 
-isRevealed :: Int -> Int -> Game Bool
+isRevealed :: Int -> Int -> GameState Bool
 isRevealed = getCellField revealed
 
-getAdjacentMines :: Int -> Int -> Game Int
+getAdjacentMines :: Int -> Int -> GameState Int
 getAdjacentMines = getCellField adjacentMines
 
-getCellField :: Getter Cell a -> Int -> Int -> Game a
+getCellField :: Getter Cell a -> Int -> Int -> GameState a
 getCellField getter x y = do
     m <- get
     return $ fromJust $ m ^? board . cells . element y . element x . getter
 
-setCellField :: Setter Cell Cell a b -> b -> Int -> Int -> Game ()
+setCellField :: Setter Cell Cell a b -> b -> Int -> Int -> GameState ()
 setCellField setter val x y = combinedSetter .= val
     where combinedSetter = board . cells . element y . element x . setter

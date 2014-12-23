@@ -11,9 +11,9 @@ import Data.List (delete, nub)
 import Data.Maybe
 import qualified Data.Vector as Vector
 
-type Solver = State Minesweeper
+type Solver = State Game
 
-findAllRevealed :: Minesweeper -> [Cell]
+findAllRevealed :: Game -> [Cell]
 findAllRevealed b = revealedCells
     where
         boardCells = b ^. board . cells
