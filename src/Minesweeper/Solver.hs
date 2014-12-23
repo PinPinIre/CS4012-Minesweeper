@@ -20,7 +20,7 @@ findAllRevealed b = revealedCells
         revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter _revealed) boardCells
 
 filterZeroAdj ::  [Cell] -> [Cell]
-filterZeroAdj c = filter (\x -> (_adjacentMines x) == 0) c
+filterZeroAdj = filter (\x -> _adjacentMines x == 0)
 
 findSafeSquares :: Solver [(Int, Int)]
 findSafeSquares = do
@@ -36,8 +36,8 @@ getSafeSquares c = do
     filterM (\(x,y) -> do
                 let result = m ^? board . cells . element y . element x . revealed
                 case result of
-                    Nothing -> do return False
-                    _ -> do return (not $ fromJust result)) nc
+                    Nothing -> return False
+                    _ -> return (not $ fromJust result)) nc
 
 
 getNeighbourCords :: Int -> Int -> [(Int, Int)]

@@ -35,14 +35,17 @@ gui = do
     let numFlags = game ^. remainingFlags
     l <- staticText f [ text := ("Remaining Flags: " ++ show numFlags) ]
     p <- panel f []
-    p2 <- panel f []
 
-    bs <- genBoard p l g
-    b <- button p2 [ text := "Solve"
-                  , on click := solve g bs]
-    set f [ layout := margin 5 $ column 5 [floatTop $ widget p, floatLeft $ widget l, floatRight $ widget p2] ]
+    buttons <- genBoard p l g
 
-genBoard :: Panel () -> StaticText () -> Var Game -> IO ([[Button ()]])
+    s <- button f [ text := "Solve"
+                  , on click := solve g buttons]
+
+    set f [ layout := margin 5 $ column 5 [ floatTop $ widget p
+                                          , row 10 [ floatLeft $ widget l
+                                                   , floatRight $ widget s]] ]
+
+genBoard :: Panel () -> StaticText () -> Var Game -> IO [[Button ()]]
 genBoard p st g = do
     b <- varGet g
 
@@ -154,8 +157,6 @@ solve game bs _ = do
     return ()
 
 revealList :: Var Game -> [[Button ()]] -> [(Int, Int)] -> IO ()
-revealList game bs cs = do
-    mapM (\(x, y) -> do
-            let b = ((bs)!!y)!!x
-            reveal y x game b (pt 0 0)) cs
-    return ()
+revealList game bs = mapM_ (\(x, y) -> do
+                        let b = (bs !! y) !! x
+                        reveal y x game b (pt 0 0))
