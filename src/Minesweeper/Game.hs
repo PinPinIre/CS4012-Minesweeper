@@ -55,7 +55,7 @@ revealCell x y = do
         if m then
             return Lose
         else do
-            setRevealed x y
+            setCellField revealed True x y
 
             won <- isWon
             if won then
@@ -97,9 +97,6 @@ isFlagged = getCellField flagged
 
 isRevealed :: Int -> Int -> Game Bool
 isRevealed = getCellField revealed
-
-setRevealed :: Int -> Int -> Game ()
-setRevealed = setCellField revealed True
 
 getAdjacentMines :: Int -> Int -> Game Int
 getAdjacentMines = getCellField adjacentMines
