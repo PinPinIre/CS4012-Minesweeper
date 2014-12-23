@@ -17,7 +17,7 @@ cabal-version:       >=1.10
 
 executable Minesweeper
   ghc-options:         -Wall
-  main-is:             Main.hs
+  main-is:             Minesweeper/Main.hs
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8,

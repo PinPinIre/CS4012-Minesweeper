@@ -1,10 +1,11 @@
-module Solver where
+module Minesweeper.Solver where
 
-import Board
-import Cell
+import Minesweeper.Board
+import Minesweeper.Cell
+import Minesweeper.Game
+
 import Control.Lens
 import Control.Monad.State
-import Game
 import Data.Vector (Vector)
 import Data.List (delete, nub)
 import Data.Maybe

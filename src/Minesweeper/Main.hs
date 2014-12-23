@@ -1,12 +1,13 @@
 module Main where
 
-import Board
-import Cell
+import Minesweeper.Board
+import Minesweeper.Cell
+import Minesweeper.Game
+import Minesweeper.Solver
+
 import Control.Lens hiding (set)
-import Solver
 import Control.Monad.State
 import qualified Control.Monad.State as State
-import Game
 import Graphics.UI.WX
 import qualified Data.Vector as Vector
 import System.Random
