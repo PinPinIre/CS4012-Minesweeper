@@ -34,7 +34,7 @@ getSafeSquares c = do
     m <- get
     let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
     filterM (\(x,y) -> do
-                let result = m ^? board . cells . element y . element x . revealed
+                let result = m ^? board . cells . element x . element y . revealed
                 case result of
                     Nothing -> return False
                     _ -> return (not $ fromJust result)) nc
