@@ -10,34 +10,32 @@ import Data.List (delete, nub)
 import Data.Maybe
 import qualified Data.Vector as Vector
 
-type Solver = State Game
-
 findAllRevealed :: Game -> [Cell]
 findAllRevealed b = revealedCells
     where
         boardCells = b ^. board . cells
-        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter _revealed) boardCells
+        filteredCells = Vector.map (Vector.toList . Vector.filter _revealed) boardCells
+        revealedCells = concat $ Vector.toList filteredCells
 
 filterZeroAdj ::  [Cell] -> [Cell]
 filterZeroAdj = filter (\x -> _adjacentMines x == 0)
 
-findSafeSquares :: Solver [(Int, Int)]
+findSafeSquares :: GameState [(Int, Int)]
 findSafeSquares = do
     m <- get
     let zeroCells = filterZeroAdj $ findAllRevealed m
     ss <- mapM getSafeSquares zeroCells
     return $ nub $ concat ss
 
-getSafeSquares :: Cell -> Solver [(Int, Int)]
+getSafeSquares :: Cell -> GameState [(Int, Int)]
 getSafeSquares c = do
     m <- get
     let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
     filterM (\(x,y) -> do
-                let result = m ^? board . cells . element x . element y . revealed
-                case result of
-                    Nothing -> return False
-                    _ -> return (not $ fromJust result)) nc
-
+        let result = m ^? board . cells . element y . element x . revealed
+        case result of
+            Nothing -> return False
+            _ -> return (not $ fromJust result)) nc
 
 getNeighbourCords :: Int -> Int -> [(Int, Int)]
 getNeighbourCords x y = delete (x,y) $ liftM2 (,) xranges yranges

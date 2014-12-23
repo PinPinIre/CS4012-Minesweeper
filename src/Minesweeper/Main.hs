@@ -151,7 +151,7 @@ quit _ = exitSuccess
 solve :: Var Game -> [[Button ()]] -> Point -> IO ()
 solve game bs _ = do
     g <- varGet game
-    let (safeMoves, _) = runState findSafeSquares g
+    safeMoves <- evalStateT findSafeSquares g
     liftIO $ print safeMoves
     revealList game bs safeMoves
     return ()
