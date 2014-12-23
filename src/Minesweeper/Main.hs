@@ -31,7 +31,7 @@ gui = do
     f <- frame [ text := "Minesweeper!"
                , bgcolor := white]
 
-    let numFlags = _remainingFlags minesweeper
+    let numFlags = minesweeper ^. remainingFlags
     l <- staticText f [ text := ("Remaining Flags: " ++ show numFlags) ]
 
     p <- panel f []
@@ -101,18 +101,22 @@ flagGame x y st b = do
         (False, False) -> do
             status <- flagCell x y
             case status of
-                OutOfFlags -> do
+                Move -> do
                     numFlags <- use remainingFlags
                     liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
                     liftIO $ set b [ text := "🚩" ]
 
                     newState <- State.get
                     liftIO $ print newState
+
+                OutOfFlags -> return ()
+
                 Won -> liftIO $ do
                     fr <- liftIO $ frame [ text := "Minesweeper!"
                                          , bgcolor := white]
                     l <- liftIO $ staticText fr [ text := "You won!"]
                     liftIO $ set fr [ layout := widget l ]
+
                 _ -> do
                     adj <- getAdjacentMines x y
                     liftIO $ set b [ text := show adj ]
