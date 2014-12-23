@@ -10,6 +10,7 @@ import Control.Monad.State
 import qualified Control.Monad.State as State
 import Graphics.UI.WX
 import qualified Data.Vector as Vector
+import System.Exit
 import System.Random
 
 buttonWidth :: Int
@@ -28,7 +29,7 @@ gui = do
     let game = initGame rng
     g <- varCreate game
 
-    f <- frame [ text := "Minesweeper!"
+    f <- frame [ text := "Minesweeper"
                , bgcolor := white]
 
     let numFlags = game ^. remainingFlags
@@ -80,9 +81,7 @@ revealGame x y b = do
 
         Lose -> do
             liftIO $ set b [ text  := "💣" ]
-            fr <- liftIO $ frame [ text := "Minesweeper!" ]
-            l <- liftIO $ staticText fr [ text := "You Lose!"]
-            liftIO $ set fr [ layout := margin 100 $ floatCenter $ widget l ]
+            liftIO $ presentAlert "You Lost!"
 
         _ -> return ()
 
@@ -110,11 +109,7 @@ flagGame x y st b = do
             else
                 liftIO $ set b [ text := "" ]
 
-        Won -> liftIO $ do
-            fr <- liftIO $ frame [ text := "Minesweeper!"
-                                 , bgcolor := white]
-            l <- liftIO $ staticText fr [ text := "You won!"]
-            liftIO $ set fr [ layout := widget l ]
+        Won -> liftIO $ presentAlert "You Won!"
 
         Error -> return ()
 
@@ -124,3 +119,27 @@ flagGame x y st b = do
 
     newState <- State.get
     liftIO $ print newState
+
+presentAlert :: String -> IO ()
+presentAlert t = do
+    f  <- frame [ text := "Minesweeper"]
+
+    l  <- staticText f [ text := t]
+
+    b1 <- button f [ text := "Play Again"
+                   , size := sz 75 30 ]
+    b2 <- button f [ text := "Quit"
+                   , size := sz 75 30 ]
+
+    set b1 [ on click := playAgain ]
+    set b2 [ on click := quit ]
+
+    set f [ layout := marginWidth 20 $ marginBottom $ marginTop $
+                      marginWidth 150 $ marginLeft $ marginRight $
+                      column 20 [floatCenter $ widget l, row 10 [widget b1, widget b2]] ]
+
+playAgain :: Point -> IO ()
+playAgain _ = return ()
+
+quit :: Point -> IO ()
+quit _ = exitSuccess
