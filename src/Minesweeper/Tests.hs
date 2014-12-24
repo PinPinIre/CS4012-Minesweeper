@@ -21,18 +21,19 @@ test False = return ()
 prop_test :: Int -> Int -> Bool
 prop_test x y = (x + y) == (y + x)
 
+
 --check if number of mines added is same as placed on board
-prop_minesadded :: Int -> IO Bool
-prop_minesadded mineNumber = do
-    board <- generateBoard
-    let mines = minedCells board
-    let result = (mineNumber == mines)
+prop_minesadded :: Int -> Int -> Int -> IO Bool
+prop_minesadded x y minesPlaced = do
+    board <- generateBoard x y minesPlaced
+    let minesFound = minedCells board
+    let result = (minesPlaced == minesFound)
     return result
 
-generateBoard :: IO Board
-generateBoard = do
+generateBoard :: Int -> Int -> Int-> IO Board
+generateBoard x y minePlaced = do
     rng <- newStdGen
-    let board = initBoard 20 20 10 rng
+    let board = initBoard x y minePlaced rng
     return board
 
 minedCells :: Board -> Int
