@@ -21,3 +21,4 @@ cabal.config
 # Threadscope
 *.eventlog
 
+src/Minesweeper/Main.exe
