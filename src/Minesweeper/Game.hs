@@ -30,6 +30,7 @@ initGame rng = Game { _board = initBoard 20 20 10 rng
                     , _remainingFlags = 10
                     }
 
+-- Returns True if all mines are flagged
 isWon :: GameState Bool
 isWon = do
     boardCells <- use $ board . cells
@@ -41,14 +42,16 @@ isWon = do
     else
         return False
 
+-- Checks if a cell is in a winnable state
 checkCellStatus :: Cell -> Bool
 checkCellStatus c
     | c ^. flagged && c ^. mined = True
     | not (c ^. mined)           = True
     | otherwise                  = False
 
-toggleRevealCell :: Int -> Int -> GameState Status
-toggleRevealCell x y = do
+-- Reveals a cell if isn't flagged and hasn't been revealed already
+revealCell :: Int -> Int -> GameState Status
+revealCell x y = do
     r <- isRevealed x y
     f <- isFlagged x y
 
@@ -67,6 +70,7 @@ toggleRevealCell x y = do
     else
         return Error
 
+-- Toggles an unrevealved cell if the player has enough flags.
 toggleFlagCell :: Int -> Int -> GameState Status
 toggleFlagCell x y = do
     r <- isRevealed x y
@@ -108,11 +112,13 @@ isRevealed = getCellField revealed
 getAdjacentMines :: Int -> Int -> GameState Int
 getAdjacentMines = getCellField adjacentMines
 
+-- Helper method for getting a record field of a cell in the board
 getCellField :: Getter Cell a -> Int -> Int -> GameState a
 getCellField getter x y = do
     m <- get
     return $ fromJust $ m ^? board . cells . element y . element x . getter
 
+-- Helper method for setting a record field of a cell in the board
 setCellField :: Setter Cell Cell a b -> b -> Int -> Int -> GameState ()
 setCellField setter val x y = combinedSetter .= val
     where combinedSetter = board . cells . element y . element x . setter

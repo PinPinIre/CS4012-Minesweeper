@@ -16,8 +16,7 @@ findAllRevealed b = revealedCells
     --filter the board cells based on the revealed attribute
     where
         boardCells = b ^. board . cells
-        filteredCells = Vector.map (Vector.toList . Vector.filter _revealed) boardCells
-        revealedCells = concat $ Vector.toList filteredCells
+        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter _revealed) boardCells
 
 -- Find all the hidden cells in the game
 findAllUnrevealed :: Game -> [Cell]
@@ -25,8 +24,7 @@ findAllUnrevealed b = revealedCells
     --filter the board cells based on the inverse of the revealed attribute
     where
         boardCells = b ^. board . cells
-        filteredCells = Vector.map (Vector.toList . Vector.filter (\x -> not $ _revealed x)) boardCells
-        revealedCells = concat $ Vector.toList filteredCells
+        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter (not . _revealed)) boardCells
 
 -- Filter cells which don't have bombs adjacent to it
 filterZeroAdj ::  [Cell] -> [Cell]
@@ -68,7 +66,7 @@ findFlagSquares = do
     -}
     let unrevealed = findAllUnrevealed m
     fs <- filterM isFlagSquare unrevealed
-    return $ nub $ map (\c -> ( (c ^. xpos), (c ^. ypos))) fs
+    return $ nub $ map (\c -> (c ^. xpos, c ^. ypos)) fs
 
 -- Determine whether the current cell contains a mine
 isFlagSquare :: Cell -> GameState Bool
@@ -87,7 +85,7 @@ isFlagSquare c = do
                     Nothing -> False
                     _ -> fromJust result) nc
     fc <- mapM adjEqualUnrevealed rn
-    return $ any (True==) fc
+    return $ True `elem` fc
 
 -- Determine whether the number of hidden adjacent tiles equals the number mines
 adjEqualUnrevealed :: (Int, Int) -> GameState Bool
@@ -101,8 +99,7 @@ adjEqualUnrevealed (a, b) = do
             in case result of
                 Nothing -> False
                 _ -> not $ fromJust result) nc
-
-    return $ adj == (length rn)
+    return $ adj == length rn
 
 -- Function to get the cordinates of all tiles adjacent to a particular location
 getNeighbourCords :: Int -> Int -> [(Int, Int)]

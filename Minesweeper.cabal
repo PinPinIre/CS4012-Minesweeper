@@ -23,6 +23,7 @@ executable Minesweeper
   build-depends:       base >=4.7 && <4.8,
                        lens,
                        mtl,
+                       QuickCheck,
                        random,
                        vector,
                        wx,
