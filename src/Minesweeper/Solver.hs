@@ -17,6 +17,12 @@ findAllRevealed b = revealedCells
         filteredCells = Vector.map (Vector.toList . Vector.filter _revealed) boardCells
         revealedCells = concat $ Vector.toList filteredCells
 
+findAllUnrevealed :: Game -> [Cell]
+findAllUnrevealed b = revealedCells
+    where
+        boardCells = b ^. board . cells
+        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter (\x -> not $ _revealed x)) boardCells
+
 filterZeroAdj ::  [Cell] -> [Cell]
 filterZeroAdj = filter (\x -> _adjacentMines x == 0)
 
@@ -32,10 +38,43 @@ getSafeSquares c = do
     m <- get
     let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
     filterM (\(x,y) -> do
-        let result = m ^? board . cells . element y . element x . revealed
+        let result = m ^? board . cells . element x . element y . revealed
         case result of
             Nothing -> return False
             _ -> return (not $ fromJust result)) nc
+
+findFlagSquares :: GameState [(Int, Int)]
+findFlagSquares = do
+    m <- get
+    let unrevealed = findAllUnrevealed m
+    fs <- filterM isFlagSquare unrevealed
+    return $ nub $ map (\c -> ( (c ^. xpos), (c ^. ypos))) fs
+
+isFlagSquare :: Cell -> GameState Bool
+isFlagSquare c = do
+    m <- get
+    let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
+    let rn = filter (\(x,y) -> do
+                let result = m ^? board . cells . element x . element y . revealed
+                case result of
+                    Nothing -> False
+                    _ -> fromJust result) nc
+    fc <- mapM adjEqualUnrevealed rn
+    return $ any (True==) fc
+
+adjEqualUnrevealed :: (Int, Int) -> GameState Bool
+adjEqualUnrevealed (a, b) = do
+    m <- get
+
+    let nc = getNeighbourCords a b
+    let adj = fromJust $ m ^? board . cells . element a . element b . adjacentMines
+
+    let rn = filter (\(x,y) ->
+            let result = m ^? board . cells . element x . element y . revealed
+            in case result of
+                Nothing -> False
+                _ -> not $ fromJust result) nc
+    return $ adj == (length rn)
 
 getNeighbourCords :: Int -> Int -> [(Int, Int)]
 getNeighbourCords x y = delete (x,y) $ liftM2 (,) xranges yranges
