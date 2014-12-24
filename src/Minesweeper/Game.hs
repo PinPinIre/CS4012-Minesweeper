@@ -69,15 +69,15 @@ toggleRevealCell x y = do
 
 toggleFlagCell :: Int -> Int -> GameState Status
 toggleFlagCell x y = do
-    numFlags <- use remainingFlags
+    r <- isRevealed x y
 
-    if numFlags > 0 then do
-        r <- isRevealed x y
+    if not r then do
+        f <- isFlagged x y
 
-        if not r then do
-            f <- isFlagged x y
+        if not f then do
+            numFlags <- use remainingFlags
 
-            if not f then do
+            if numFlags > 0 then do
                 setCellField flagged True x y
                 remainingFlags -= 1
 
@@ -86,13 +86,13 @@ toggleFlagCell x y = do
                     return Won
                 else
                     return Move
-            else do
-                setCellField flagged False x y
-                remainingFlags += 1
+            else
+                return Error
+        else do
+            setCellField flagged False x y
+            remainingFlags += 1
 
-                return Move
-        else
-            return Error
+            return Move
     else
         return Error
 
