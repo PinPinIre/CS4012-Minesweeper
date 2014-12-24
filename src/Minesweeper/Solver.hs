@@ -21,7 +21,7 @@ findAllUnrevealed :: Game -> [Cell]
 findAllUnrevealed b = revealedCells
     where
         boardCells = b ^. board . cells
-        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter (\x -> not $ _revealed x)) boardCells
+        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter (not . _revealed)) boardCells
 
 filterZeroAdj ::  [Cell] -> [Cell]
 filterZeroAdj = filter (\x -> _adjacentMines x == 0)
@@ -48,7 +48,7 @@ findFlagSquares = do
     m <- get
     let unrevealed = findAllUnrevealed m
     fs <- filterM isFlagSquare unrevealed
-    return $ nub $ map (\c -> ( (c ^. xpos), (c ^. ypos))) fs
+    return $ nub $ map (\c -> (c ^. xpos, c ^. ypos)) fs
 
 isFlagSquare :: Cell -> GameState Bool
 isFlagSquare c = do
@@ -60,7 +60,7 @@ isFlagSquare c = do
                     Nothing -> False
                     _ -> fromJust result) nc
     fc <- mapM adjEqualUnrevealed rn
-    return $ any (True==) fc
+    return $ True `elem` fc
 
 adjEqualUnrevealed :: (Int, Int) -> GameState Bool
 adjEqualUnrevealed (a, b) = do
@@ -74,7 +74,7 @@ adjEqualUnrevealed (a, b) = do
             in case result of
                 Nothing -> False
                 _ -> not $ fromJust result) nc
-    return $ adj == (length rn)
+    return $ adj == length rn
 
 getNeighbourCords :: Int -> Int -> [(Int, Int)]
 getNeighbourCords x y = delete (x,y) $ liftM2 (,) xranges yranges
