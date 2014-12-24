@@ -36,26 +36,26 @@ gui = do
     l <- staticText f [ text := ("Remaining Flags: " ++ show numFlags) ]
     p <- panel f []
 
-    buttons <- genBoard p l g
+    buttons <- genBoard f p l g
 
     s <- button f [ text := "Solve"
-                  , on click := solve g buttons l ]
+                  , on click := solve f g buttons l ]
 
     set f [ layout := margin 5 $ column 5 [ floatTop $ widget p
                                           , row 10 [ floatLeft $ widget l
                                                    , floatRight $ widget s]] ]
 
-genBoard :: Panel () -> StaticText () -> Var Game -> IO [[Button ()]]
-genBoard p st g = do
+genBoard :: Frame () -> Panel () -> StaticText () -> Var Game -> IO [[Button ()]]
+genBoard f p st g = do
     b <- varGet g
 
     let boardCells = b ^. board . cells
         cellsList = Vector.toList $ Vector.map Vector.toList boardCells
 
-    mapM (mapM (genButtton p st g)) cellsList
+    mapM (mapM (genButtton f p st g)) cellsList
 
-genButtton :: Panel () -> StaticText () -> Var Game -> Cell -> IO (Button ())
-genButtton p st g c = do
+genButtton :: Frame () -> Panel () -> StaticText () -> Var Game -> Cell -> IO (Button ())
+genButtton f p st g c = do
     let x = _xpos c
         y = _ypos c
 
@@ -63,19 +63,19 @@ genButtton p st g c = do
                   , position := pt (x * buttonHeight) (y * buttonWidth)
                   , size := sz buttonWidth buttonHeight ]
 
-    set b [ on click := reveal x y g b
-          , on clickRight := flag x y st g b]
+    set b [ on click := reveal x y f g b
+          , on clickRight := flag x y f st g b]
 
     return b
 
-reveal :: Int -> Int -> Var Game -> Button () -> Point -> IO ()
-reveal x y game b _ = do
+reveal :: Int -> Int -> Frame () -> Var Game -> Button () -> Point -> IO ()
+reveal x y f game b _ = do
     g <- varGet game
-    newState <- execStateT (revealGame x y b) g
+    newState <- execStateT (revealGame x y f b) g
     varSet game newState
 
-revealGame :: Int -> Int -> Button () -> GameState ()
-revealGame x y b = do
+revealGame :: Int -> Int -> Frame () -> Button () -> GameState ()
+revealGame x y f b = do
     status <- toggleRevealCell x y
 
     case status of
@@ -85,21 +85,21 @@ revealGame x y b = do
 
         Lose -> do
             liftIO $ set b [ text  := "💣" ]
-            liftIO $ presentAlert "You Lost!"
+            liftIO $ presentAlert f "You Lost!"
 
         _ -> return ()
 
     newState <- State.get
     liftIO $ print newState
 
-flag :: Int -> Int -> StaticText () -> Var Game -> Button () -> Point -> IO ()
-flag x y st game b _ = do
+flag :: Int -> Int -> Frame () -> StaticText () -> Var Game -> Button () -> Point -> IO ()
+flag x y f st game b _ = do
     g <- varGet game
-    newState <- execStateT (flagGame x y st b) g
+    newState <- execStateT (flagGame x y f st b) g
     varSet game newState
 
-flagGame :: Int -> Int -> StaticText () -> Button () -> GameState ()
-flagGame x y st b = do
+flagGame :: Int -> Int -> Frame () -> StaticText () -> Button () -> GameState ()
+flagGame x y f st b = do
     status <- toggleFlagCell x y
 
     case status of
@@ -107,15 +107,15 @@ flagGame x y st b = do
             numFlags <- use remainingFlags
             liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
 
-            f <- isFlagged x y
-            if f then
+            cellFlagged <- isFlagged x y
+            if cellFlagged then
                 liftIO $ set b [ text := "🚩" ]
             else
                 liftIO $ set b [ text := "" ]
 
         Won -> liftIO $ do
             set b [ text := "🚩" ]
-            presentAlert "You Won!"
+            presentAlert f "You Won!"
 
         Error -> return ()
 
@@ -126,47 +126,49 @@ flagGame x y st b = do
     newState <- State.get
     liftIO $ print newState
 
-presentAlert :: String -> IO ()
-presentAlert t = do
-    f  <- frame [ text := "Minesweeper"]
+presentAlert :: Frame () -> String -> IO ()
+presentAlert f t = do
+    close f
 
-    l  <- staticText f [ text := t]
+    alertFrame  <- frame [ text := "Minesweeper"]
 
-    b1 <- button f [ text := "Play Again"
-                   , size := sz 75 30 ]
-    b2 <- button f [ text := "Quit"
-                   , size := sz 75 30 ]
+    l  <- staticText alertFrame [ text := t]
 
-    set b1 [ on click := playAgain ]
+    b1 <- button alertFrame [ text := "Play Again"
+                            , size := sz 75 30 ]
+    b2 <- button alertFrame [ text := "Quit"
+                            , size := sz 75 30 ]
+
+    set b1 [ on click := playAgain alertFrame ]
     set b2 [ on click := quit ]
 
-    set f [ layout := marginWidth 20 $ marginBottom $ marginTop $
-                      marginWidth 150 $ marginLeft $ marginRight $
-                      column 20 [floatCenter $ widget l, row 10 [widget b1, widget b2]] ]
+    set alertFrame [ layout := marginWidth 20 $ marginBottom $ marginTop $
+                               marginWidth 150 $ marginLeft $ marginRight $
+                               column 20 [floatCenter $ widget l, row 10 [widget b1, widget b2]] ]
 
-playAgain :: Point -> IO ()
-playAgain _ = return ()
+playAgain :: Frame () -> Point -> IO ()
+playAgain f _ = close f >> gui
 
 quit :: Point -> IO ()
 quit _ = exitSuccess
 
-solve :: Var Game -> [[Button ()]] -> StaticText () -> Point -> IO ()
-solve game bs l _ = do
+solve :: Frame () -> Var Game -> [[Button ()]] -> StaticText () -> Point -> IO ()
+solve f game bs l _ = do
     g <- varGet game
     safeMoves <- evalStateT findSafeSquares g
     case safeMoves of
         []  -> do
             flagMoves <- evalStateT findFlagSquares g
-            flagList game bs l flagMoves
+            flagList f game bs l flagMoves
 
-        _   -> revealList game bs safeMoves
+        _   -> revealList f game bs safeMoves
 
-revealList :: Var Game -> [[Button ()]] -> [(Int, Int)] -> IO ()
-revealList game bs = mapM_ (\(x, y) -> do
+revealList :: Frame () -> Var Game -> [[Button ()]] -> [(Int, Int)] -> IO ()
+revealList f game bs = mapM_ (\(x, y) -> do
                         let b = (bs !! y) !! x
-                        reveal y x game b (pt 0 0))
+                        reveal y x f game b (pt 0 0))
 
-flagList :: Var Game -> [[Button ()]] -> StaticText () -> [(Int, Int)] -> IO ()
-flagList game bs l = mapM_ (\(x, y) -> do
+flagList :: Frame () -> Var Game -> [[Button ()]] -> StaticText () -> [(Int, Int)] -> IO ()
+flagList f game bs l = mapM_ (\(x, y) -> do
                             let b = (bs !! y) !! x
-                            flag y x l game b (pt 0 0))
+                            flag y x f l game b (pt 0 0))
