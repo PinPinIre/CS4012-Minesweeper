@@ -1,10 +1,10 @@
 module Main where
 
-import Board
-import Cell
-import Game
-import Solver
-import Tests
+import Minesweeper.Board
+import Minesweeper.Cell
+import Minesweeper.Game
+import Minesweeper.Solver
+import Minesweeper.Tests
 
 import Control.Lens hiding (set)
 import Control.Monad.State
@@ -21,10 +21,11 @@ buttonHeight :: Int
 buttonHeight = 30
 
 main :: IO ()
-main = test True
+main = do
+    --test True
+    start gui
 
 
-{-
 
 gui :: IO ()
 gui = do

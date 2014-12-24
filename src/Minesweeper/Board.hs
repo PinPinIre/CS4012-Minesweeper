@@ -1,8 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Board where
+module Minesweeper.Board where
 
-import Cell
+import Minesweeper.Cell
 
 import Control.Lens
 import Data.Vector (Vector)

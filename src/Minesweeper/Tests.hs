@@ -1,8 +1,8 @@
-module Tests where
+module Minesweeper.Tests where
 
-import Board
-import Cell
-import Game
+import Minesweeper.Board
+import Minesweeper.Cell
+import Minesweeper.Game
 
 import Control.Monad.State
 import Data.Vector (Vector)

@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Cell where
+module Minesweeper.Cell where
 
 import Control.Lens
 
