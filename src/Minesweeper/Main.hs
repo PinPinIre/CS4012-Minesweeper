@@ -113,7 +113,9 @@ flagGame x y st b = do
             else
                 liftIO $ set b [ text := "" ]
 
-        Won -> liftIO $ presentAlert "You Won!"
+        Won -> liftIO $ do
+            set b [ text := "🚩" ]
+            presentAlert "You Won!"
 
         Error -> return ()
 
@@ -156,8 +158,8 @@ solve game bs l _ = do
         []  -> do
             flagMoves <- evalStateT findFlagSquares g
             flagList game bs l flagMoves
-        _   -> do
-            revealList game bs safeMoves
+
+        _   -> revealList game bs safeMoves
 
 revealList :: Var Game -> [[Button ()]] -> [(Int, Int)] -> IO ()
 revealList game bs = mapM_ (\(x, y) -> do
@@ -165,6 +167,6 @@ revealList game bs = mapM_ (\(x, y) -> do
                         reveal y x game b (pt 0 0))
 
 flagList :: Var Game -> [[Button ()]] -> StaticText () -> [(Int, Int)] -> IO ()
-flagList game bs l cs = mapM_ (\(x, y) -> do
+flagList game bs l = mapM_ (\(x, y) -> do
                             let b = (bs !! y) !! x
-                            flag y x l game b (pt 0 0)) cs
+                            flag y x l game b (pt 0 0))
