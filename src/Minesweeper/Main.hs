@@ -165,8 +165,13 @@ playAgain f _ = close f >> gui
 quit :: Point -> IO ()
 quit _ = exitSuccess
 
+-- Automatically make all current safe moves
 solve :: Frame () -> Var Game -> [[Button ()]] -> StaticText () -> Point -> IO ()
 solve f game bs l _ = do
+    {-
+         Reveal all cells that are completely safe to reveal and if there aren't
+         any cells that can be safely revealed flag cells that are bombs
+    -}
     g <- varGet game
     safeMoves <- evalStateT findSafeSquares g
     case safeMoves of
@@ -176,11 +181,13 @@ solve f game bs l _ = do
 
         _   -> revealList f game bs safeMoves
 
+-- Reveal a list cells
 revealList :: Frame () -> Var Game -> [[Button ()]] -> [(Int, Int)] -> IO ()
 revealList f game bs = mapM_ (\(x, y) -> do
                         let b = (bs !! y) !! x
                         reveal y x f game b (pt 0 0))
 
+-- Flag a list of cells
 flagList :: Frame () -> Var Game -> [[Button ()]] -> StaticText () -> [(Int, Int)] -> IO ()
 flagList f game bs l = mapM_ (\(x, y) -> do
                             let b = (bs !! y) !! x
