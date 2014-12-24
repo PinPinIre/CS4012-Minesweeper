@@ -39,7 +39,7 @@ gui = do
 
     bs <- genBoard p l g
     b <- button p2 [ text := "Solve"
-                  , on click := solve g bs]
+                  , on click := solve g bs l]
     set f [ layout := margin 5 $ column 5 [floatTop $ widget p, floatLeft $ widget l, floatRight $ widget p2] ]
 
 genBoard :: Panel () -> StaticText () -> Var Game -> IO ([[Button ()]])
@@ -145,17 +145,29 @@ playAgain _ = return ()
 quit :: Point -> IO ()
 quit _ = exitSuccess
 
-solve :: Var Game -> [[Button ()]] -> Point -> IO ()
-solve game bs _ = do
+solve :: Var Game -> [[Button ()]] -> StaticText () -> Point -> IO ()
+solve game bs l _ = do
     g <- varGet game
     let (safeMoves, _) = runState findSafeSquares g
-    liftIO $ print safeMoves
-    revealList game bs safeMoves
-    return ()
+    case safeMoves of
+        []  -> do
+            let (flagMoves, _) = runState findFlagSquares g
+            liftIO $ print flagMoves
+            flagList game bs l flagMoves
+            return ()
+        _   -> do
+            revealList game bs safeMoves
 
 revealList :: Var Game -> [[Button ()]] -> [(Int, Int)] -> IO ()
 revealList game bs cs = do
     mapM (\(x, y) -> do
             let b = ((bs)!!y)!!x
             reveal y x game b (pt 0 0)) cs
+    return ()
+
+flagList :: Var Game -> [[Button ()]] -> StaticText () -> [(Int, Int)] -> IO ()
+flagList game bs l cs = do
+    mapM (\(x, y) -> do
+            let b = ((bs)!!y)!!x
+            flag y x l game b (pt 0 0)) cs
     return ()

@@ -13,6 +13,12 @@ import qualified Data.Vector as Vector
 
 type Solver = State Game
 
+findAllUnrevealed :: Game -> [Cell]
+findAllUnrevealed b = revealedCells
+    where
+        boardCells = b ^. board . cells
+        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter (\x -> not $ _revealed x)) boardCells
+
 findAllRevealed :: Game -> [Cell]
 findAllRevealed b = revealedCells
     where
@@ -29,6 +35,13 @@ findSafeSquares = do
     ss <- mapM getSafeSquares zeroCells
     return $ nub $ concat ss
 
+findFlagSquares :: Solver [(Int, Int)]
+findFlagSquares = do
+    m <- get
+    let unrevealed = findAllUnrevealed m
+    fs <- filterM isFlagSquare unrevealed
+    return $ nub $ map (\c -> ( (c ^. xpos), (c ^. ypos))) fs
+
 getSafeSquares :: Cell -> Solver [(Int, Int)]
 getSafeSquares c = do
     m <- get
@@ -39,6 +52,31 @@ getSafeSquares c = do
                     Nothing -> do return False
                     _ -> do return (not $ fromJust result)) nc
 
+isFlagSquare :: Cell -> Solver Bool
+isFlagSquare c = do
+    m <- get
+    let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
+    let rn = filter (\(x,y) -> do
+                let result = m ^? board . cells . element x . element y . revealed
+                case result of
+                    Nothing -> False
+                    _ -> fromJust result) nc
+    fc <- mapM adjEqualUnrevealed rn
+    return $ any (True==) fc
+
+adjEqualUnrevealed :: (Int, Int) -> Solver Bool
+adjEqualUnrevealed (a, b) = do
+    m <- get
+
+    let nc = getNeighbourCords a b
+    let adj = fromJust $ m ^? board . cells . element a . element b . adjacentMines
+
+    let rn = filter (\(x,y) ->
+            let result = m ^? board . cells . element x . element y . revealed
+            in case result of
+                Nothing -> False
+                _ -> not $ fromJust result) nc
+    return $ adj == (length rn)
 
 getNeighbourCords :: Int -> Int -> [(Int, Int)]
 getNeighbourCords x y = delete (x,y) $ liftM2 (,) xranges yranges
