@@ -4,6 +4,7 @@ import Minesweeper.Board
 import Minesweeper.Cell
 import Minesweeper.Game
 import Minesweeper.Solver
+import Minesweeper.Tests
 
 import Control.Lens hiding (set)
 import Control.Monad.State
