@@ -23,6 +23,7 @@ buttonHeight = 30
 main :: IO ()
 main = start gui
 
+-- Creates GUI for game
 gui :: IO ()
 gui = do
     rng <- newStdGen
@@ -46,6 +47,7 @@ gui = do
                                           , row 10 [ floatLeft $ widget l
                                                    , floatRight $ widget s]] ]
 
+-- Generate a list of buttons for each cell and add them to the frame
 genBoard :: Frame () -> Panel () -> StaticText () -> Var Game -> IO [[Button ()]]
 genBoard f p st g = do
     b <- varGet g
@@ -55,6 +57,7 @@ genBoard f p st g = do
 
     mapM (mapM (genButtton f p st g)) cellsList
 
+-- Generate and position a button for a specific cell in the board
 genButtton :: Frame () -> Panel () -> StaticText () -> Var Game -> Cell -> IO (Button ())
 genButtton f p st g c = do
     let x = _xpos c
@@ -69,15 +72,17 @@ genButtton f p st g c = do
 
     return b
 
+-- Reveal a cell on the board
 reveal :: Int -> Int -> Frame () -> Var Game -> Button () -> Point -> IO ()
 reveal x y f game b _ = do
     g <- varGet game
     newState <- execStateT (revealGame x y f b) g
     varSet game newState
 
+-- Reveal a cell on the board and handle returned status
 revealGame :: Int -> Int -> Frame () -> Button () -> GameState ()
 revealGame x y f b = do
-    status <- toggleRevealCell x y
+    status <- revealCell x y
 
     case status of
         Move -> do
@@ -93,17 +98,20 @@ revealGame x y f b = do
     newState <- State.get
     liftIO $ print newState
 
+-- Flag a cell on the board
 flag :: Int -> Int -> Frame () -> StaticText () -> Var Game -> Button () -> Point -> IO ()
 flag x y f st game b _ = do
     g <- varGet game
     newState <- execStateT (flagGame x y f st b) g
     varSet game newState
 
+-- Flag a cell on the board and handle returned status
 flagGame :: Int -> Int -> Frame () -> StaticText () -> Button () -> GameState ()
 flagGame x y f st b = do
     status <- toggleFlagCell x y
 
     case status of
+        -- Update remaining flags count displayed in UI
         Move -> do
             numFlags <- use remainingFlags
             liftIO $ set st [ text := ("Remaining Flags: " ++ show numFlags) ]
@@ -114,6 +122,7 @@ flagGame x y f st b = do
             else
                 liftIO $ set b [ text := "" ]
 
+        -- Display win alert
         Won -> liftIO $ do
             set b [ text := "🚩" ]
             presentAlert f "You Won!"
@@ -127,6 +136,8 @@ flagGame x y f st b = do
     newState <- State.get
     liftIO $ print newState
 
+-- Helper method for creating win/lose alert with buttons for quiting
+-- and playing again
 presentAlert :: Frame () -> String -> IO ()
 presentAlert f t = do
     close f
@@ -147,6 +158,7 @@ presentAlert f t = do
                                marginWidth 150 $ marginLeft $ marginRight $
                                column 20 [floatCenter $ widget l, row 10 [widget b1, widget b2]] ]
 
+-- Close current frame and create another
 playAgain :: Frame () -> Point -> IO ()
 playAgain f _ = close f >> gui
 

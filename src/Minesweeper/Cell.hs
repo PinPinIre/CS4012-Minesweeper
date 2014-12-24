@@ -32,6 +32,7 @@ initCell x y = Cell { _xpos = x
                     , _adjacentMines = 0
                     }
 
+-- Checks if Cell postions are 1 square away from eachother
 isAdjacent :: Cell -> Cell -> Bool
 isAdjacent c1 c2 = floored == 1
     where
