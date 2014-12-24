@@ -25,15 +25,20 @@ initBoard w h mines rng = adjacencyBoard
     where
         genCells = [[initCell x y | y <- [0..(h - 1)]] | x <- [0..(w - 1)]]
         board = Board (Vector.fromList $ map Vector.fromList genCells) w h
-        minedBoard = addMines mines rng board
+        minedBoard = addMines mines rng [] board
         adjacencyBoard = calculateAdjacency minedBoard
 
-addMines :: Int -> StdGen -> Board -> Board
-addMines 0 _ board = board
-addMines count rng board = addMines (count-1) newRng' newBoard
+addMines :: Int -> StdGen -> [(Int, Int)] -> Board -> Board
+addMines 0 _ _ board = board
+addMines count rng sofar board =
+    if point `elem` sofar then
+        addMines count newRng' sofar newBoard
+    else
+        addMines (count-1) newRng' (point:sofar) newBoard
     where
         (x, newRng) = randomR (0, board ^. width - 1) rng
         (y, newRng') = randomR (0, board ^. height - 1) newRng
+        point = (x, y)
         newBoard = board & (cells . element y . element x . mined) .~ True
 
 calculateAdjacency :: Board -> Board

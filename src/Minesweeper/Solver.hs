@@ -6,12 +6,16 @@ import Minesweeper.Game
 
 import Control.Lens
 import Control.Monad.State
-import Data.Vector (Vector)
 import Data.List (delete, nub)
 import Data.Maybe
 import qualified Data.Vector as Vector
 
-type Solver = State Game
+findAllRevealed :: Game -> [Cell]
+findAllRevealed b = revealedCells
+    where
+        boardCells = b ^. board . cells
+        filteredCells = Vector.map (Vector.toList . Vector.filter _revealed) boardCells
+        revealedCells = concat $ Vector.toList filteredCells
 
 findAllUnrevealed :: Game -> [Cell]
 findAllUnrevealed b = revealedCells
@@ -19,40 +23,34 @@ findAllUnrevealed b = revealedCells
         boardCells = b ^. board . cells
         revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter (\x -> not $ _revealed x)) boardCells
 
-findAllRevealed :: Game -> [Cell]
-findAllRevealed b = revealedCells
-    where
-        boardCells = b ^. board . cells
-        revealedCells = concat $ Vector.toList $ Vector.map (Vector.toList . Vector.filter _revealed) boardCells
-
 filterZeroAdj ::  [Cell] -> [Cell]
-filterZeroAdj c = filter (\x -> (_adjacentMines x) == 0) c
+filterZeroAdj = filter (\x -> _adjacentMines x == 0)
 
-findSafeSquares :: Solver [(Int, Int)]
+findSafeSquares :: GameState [(Int, Int)]
 findSafeSquares = do
     m <- get
     let zeroCells = filterZeroAdj $ findAllRevealed m
     ss <- mapM getSafeSquares zeroCells
     return $ nub $ concat ss
 
-findFlagSquares :: Solver [(Int, Int)]
+getSafeSquares :: Cell -> GameState [(Int, Int)]
+getSafeSquares c = do
+    m <- get
+    let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
+    filterM (\(x,y) -> do
+        let result = m ^? board . cells . element x . element y . revealed
+        case result of
+            Nothing -> return False
+            _ -> return (not $ fromJust result)) nc
+
+findFlagSquares :: GameState [(Int, Int)]
 findFlagSquares = do
     m <- get
     let unrevealed = findAllUnrevealed m
     fs <- filterM isFlagSquare unrevealed
     return $ nub $ map (\c -> ( (c ^. xpos), (c ^. ypos))) fs
 
-getSafeSquares :: Cell -> Solver [(Int, Int)]
-getSafeSquares c = do
-    m <- get
-    let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
-    filterM (\(x,y) -> do
-                let result = m ^? board . cells . element x . element y . revealed
-                case result of
-                    Nothing -> do return False
-                    _ -> do return (not $ fromJust result)) nc
-
-isFlagSquare :: Cell -> Solver Bool
+isFlagSquare :: Cell -> GameState Bool
 isFlagSquare c = do
     m <- get
     let nc = getNeighbourCords (c ^. xpos) (c ^. ypos)
@@ -64,7 +62,7 @@ isFlagSquare c = do
     fc <- mapM adjEqualUnrevealed rn
     return $ any (True==) fc
 
-adjEqualUnrevealed :: (Int, Int) -> Solver Bool
+adjEqualUnrevealed :: (Int, Int) -> GameState Bool
 adjEqualUnrevealed (a, b) = do
     m <- get
 
